@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { cellPosition, divideModel, disposeTiles } from './geometry';
+import { createFrame } from './frame';
 import { EMPTY } from './puzzle';
 
 const ease = (t: number) => 1 - (1 - t) ** 3;
@@ -18,22 +19,25 @@ export class PuzzleView {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFShadowMap;
-    renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.17;
+    renderer.toneMapping = T.NeutralToneMapping;
+    renderer.toneMappingExposure = 1;
     host.append(renderer.domElement);
-    this.camera.position.z = 8;
-    this.scene.add(new T.HemisphereLight(0xfff5f2, 0xb7a3c9, 1.55));
-    const light = new T.DirectionalLight(0xfff6e6, 2.15);
-    light.position.set(-3, 5, 8);
+    const tilt = T.MathUtils.degToRad(10);
+    this.camera.position.set(.39, Math.sin(tilt) * 8, Math.cos(tilt) * 8);
+    this.camera.lookAt(0, 0, 0);
+    this.scene.add(createFrame());
+    this.scene.add(new T.HemisphereLight(0xfffbf4, 0xcabcb1, 2.02));
+    const light = new T.DirectionalLight(0xfff4e6, 1.65);
+    light.position.set(-2.8, 3.8, 9);
     light.castShadow = true;
     light.shadow.mapSize.set(1024, 1024);
     Object.assign(light.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3, near: .5, far: 17 });
-    light.shadow.normalBias = .024;
+    light.shadow.normalBias = .007;
     light.shadow.bias = -.0001;
-    light.shadow.radius = 4;
-    light.shadow.intensity = .46;
+    light.shadow.radius = 5;
+    light.shadow.intensity = .52;
     this.scene.add(light);
-    const fill = new T.DirectionalLight(0xf1d9fc, .34);
+    const fill = new T.DirectionalLight(0xe3e8ff, .43);
     fill.position.set(4, -2, 5);
     this.scene.add(fill);
     const resize = () => {
@@ -48,17 +52,12 @@ export class PuzzleView {
   load(model: T.Group, layout: readonly number[], showFinal = false): void {
     disposeTiles(this.tiles);
     this.tiles = divideModel(model);
-    const cream = new T.MeshStandardMaterial({ color: '#ffe8cb', emissive: '#edc6a2', emissiveIntensity: .09, roughness: .83 });
-    const geometry = new RoundedBoxGeometry(.989, .989, .245, 5, .096);
-    const under = new T.MeshStandardMaterial({ color: '#c8885b', roughness: 1 });
-    const underGeometry = new RoundedBoxGeometry(.983, .984, .15, 4, .073);
+    const ivory = new T.MeshStandardMaterial({ color: '#fff2dc', roughness: .91, metalness: 0 });
+    const geometry = new RoundedBoxGeometry(.976, .976, .14, 4, .026);
     for (const tile of this.tiles) {
-      const base = new T.Mesh(geometry, cream);
+      const base = new T.Mesh(geometry, ivory);
       base.receiveShadow = true;
-      base.castShadow = true;
-      const edge = new T.Mesh(underGeometry, under);
-      edge.position.set(0, -.016, -.066);
-      tile.add(edge, base);
+      tile.add(base);
       this.scene.add(tile);
     }
     this.reset(layout, showFinal);

@@ -13,8 +13,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .round:active,#play:active{transform:translateY(3px);box-shadow:inset 0 -2px 0 #efd4ae,0 3px 5px #a44e7850}
 h1{margin:clamp(2px,.6dvh,8px) 0 0;border-radius:100px;text-align:center;min-width:clamp(130px,28dvh,344px);padding:.19em .65em .24em;font-size:clamp(28px,4.8dvh,55px);font-weight:850;letter-spacing:.015em;line-height:1.13;box-shadow:inset 0 2px 2px #fffcf4,0 9px 16px #ac4f782c}
 .board{position:relative;width:var(--board);aspect-ratio:1;transform:translateY(4.2dvh);touch-action:none;user-select:none;-webkit-user-select:none}
-.frame{position:absolute;inset:-2.6%;border:calc(var(--board)*.027) solid #ffefd8;border-radius:8%;box-shadow:inset 0 0 calc(var(--board)*.012) #a45930a6,0 4px 0 #edd2a9,0 16px 22px -8px #70365a93,0 28px 40px -11px #7e43736b;pointer-events:none}
-.frame:before{content:"";position:absolute;inset:calc(var(--board)*-.025);border-radius:inherit;border-top:calc(var(--board)*.009) solid #fffaf0a8;pointer-events:none}
+.board-shadow{position:absolute;inset:0 -2%;border-radius:5%;box-shadow:0 25px 30px -21px #8b56688c,0 39px 65px -37px #925b817a;pointer-events:none}
 #scene{position:absolute;inset:0;pointer-events:none}
 canvas{position:absolute;display:block;width:100%;height:100%}
 #controls{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
@@ -36,7 +35,6 @@ dialog p{font-size:27px;font-weight:850;margin:0 0 18px}
 @media(max-height:450px) and (orientation:landscape){:root{--board:70dvh}.board{transform:translateY(7dvh)}h1{font-size:21px;min-width:102px}.round{width:44px}}
 @media(prefers-reduced-motion:reduce){.hand{animation:none}.round,#play{transition:none}}
 #scene{inset:calc(var(--board)*-.2266667)}
-canvas{filter:drop-shadow(0 calc(var(--board)*.007) calc(var(--board)*.008) #75415472)}
 @media(max-width:520px){
   .hud{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
   .round{width:clamp(44px,15vw,65px)}
