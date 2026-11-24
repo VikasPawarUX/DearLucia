@@ -37,3 +37,8 @@ dialog p{font-size:27px;font-weight:850;margin:0 0 18px}
 @media(prefers-reduced-motion:reduce){.hand{animation:none}.round,#play{transition:none}}
 #scene{inset:calc(var(--board)*-.2266667)}
 canvas{filter:drop-shadow(0 calc(var(--board)*.007) calc(var(--board)*.008) #75415472)}
+@media(max-width:520px){
+  .hud{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+  .round{width:clamp(44px,15vw,65px)}
+  h1{min-width:clamp(110px,42vw,210px);font-size:clamp(25px,7.5vw,38px)}
+}
