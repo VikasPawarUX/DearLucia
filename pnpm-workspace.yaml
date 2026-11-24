@@ -1,0 +1,5 @@
+overrides:
+  rollup: npm:@rollup/wasm-node@4.68.8
+allowBuilds:
+  esbuild: true
+verifyDepsBeforeRun: false
