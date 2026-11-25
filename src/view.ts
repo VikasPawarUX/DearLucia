@@ -1,3 +1,4 @@
+import { paintTile } from './bevel';
 import { EMPTY } from './puzzle';
 
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -31,6 +32,13 @@ export class PuzzleView {
   load(artwork: string, layout: readonly number[]): void {
     const image = `url("${artwork}")`;
     this.host.style.setProperty('--art', image);
+    for (const tile of this.tiles) tile.querySelector('canvas')?.remove();
+    const source = new Image();
+    source.src = artwork;
+    void source.decode().then(() => {
+      if (this.host.style.getPropertyValue('--art') !== image) return;
+      this.tiles.forEach((tile, index) => tile.querySelector('.block')!.append(paintTile(source, index)));
+    }).catch(() => {});
     this.painting.style.setProperty('--art', image);
     this.painting.style.opacity = '0';
     this.host.style.opacity = '1';
