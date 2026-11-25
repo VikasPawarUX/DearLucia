@@ -109,6 +109,10 @@ async function move(index: number): Promise<void> {
     if (document.activeElement === cells[index]) cells[destination].focus({ preventScroll: true });
     return;
   }
+  const nextLevel = levels[levelIndex + 1];
+  const nextArtwork = nextLevel ? new Image() : undefined;
+  if (nextArtwork && nextLevel) nextArtwork.src = nextLevel.artwork;
+
   await delay(reducedMotion.matches ? 100 : 330);
   await view.stamp();
   sound.stamp();
@@ -125,9 +129,9 @@ async function move(index: number): Promise<void> {
   status.textContent = `${levels[levelIndex].name} complete`;
   await delay(reducedMotion.matches ? 0 : 150);
   await view.reveal();
-  if (levelIndex + 1 < levels.length) {
+  if (nextArtwork) {
     save(levelIndex + 1);
-    await delay(1650);
+    await Promise.all([delay(1650), nextArtwork.decode().catch(() => {})]);
     levelIndex++;
     startLevel();
   }
