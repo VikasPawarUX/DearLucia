@@ -1,4 +1,4 @@
-import sunflowers from './assets/sunflowers.jpg';
+import familyPortrait from './assets/family-portrait.jpg';
 import sailboat from './assets/sailboat.jpg';
 import lighthouse from './assets/lighthouse.jpg';
 import cottage from './assets/cottage.jpg';
@@ -12,7 +12,7 @@ import cabin from './assets/snow-cabin.jpg';
 type Level = { name: string; artwork: string; shuffleMoves: number };
 
 export const levels: readonly Level[] = [
-  { name: 'Sunflowers in a vase', artwork: sunflowers, shuffleMoves: 2 },
+  { name: 'Family portrait', artwork: familyPortrait, shuffleMoves: 2 },
   { name: 'Sailboat on a blue ocean', artwork: sailboat, shuffleMoves: 4 },
   { name: 'Red and white lighthouse', artwork: lighthouse, shuffleMoves: 6 },
   { name: 'Countryside cottage', artwork: cottage, shuffleMoves: 8 },

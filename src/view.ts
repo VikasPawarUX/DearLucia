@@ -34,6 +34,7 @@ export class PuzzleView {
     this.painting.style.setProperty('--art', image);
     this.painting.style.opacity = '0';
     this.host.style.opacity = '1';
+    this.host.style.setProperty('--empty-slot', position(layout.indexOf(EMPTY)));
     layout.forEach((tile, index) => {
       this.tilePositions[tile] = index;
       this.tiles[tile].style.transform = position(index);
@@ -44,6 +45,7 @@ export class PuzzleView {
   async move(tile: number, index: number): Promise<void> {
     const piece = this.tiles[tile];
     const from = position(this.tilePositions[tile]);
+    this.host.style.setProperty('--empty-slot', from);
     const to = position(index);
     this.tilePositions[tile] = index;
     piece.style.transform = to;
