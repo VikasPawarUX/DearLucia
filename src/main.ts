@@ -23,11 +23,13 @@ function restore(): number {
 }
 
 function save(progress: number): void {
-  try { localStorage.setItem(progressKey, String(progress)); }
+  try { localStorage.setItem(progressKey, String(Math.max(progress, restore()))); }
   catch { /* Play remains available when storage is blocked. */ }
 }
 
-let levelIndex = restore();
+const requestedLevel = Number(new URLSearchParams(window.location.search).get('level'));
+const hasRequestedLevel = Number.isInteger(requestedLevel) && requestedLevel >= 1 && requestedLevel <= levels.length;
+let levelIndex = hasRequestedLevel ? requestedLevel - 1 : restore();
 let layout: number[] = [];
 let busy = false;
 let pointer: { id: number; index: number; x: number; y: number } | undefined;
@@ -133,6 +135,11 @@ async function move(index: number): Promise<void> {
     save(levelIndex + 1);
     await Promise.all([delay(1650), nextArtwork.decode().catch(() => {})]);
     levelIndex++;
+    if (hasRequestedLevel) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('level', String(levelIndex + 1));
+      window.history.replaceState(null, '', url);
+    }
     startLevel();
   }
 }
