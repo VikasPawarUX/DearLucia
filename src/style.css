@@ -80,8 +80,13 @@ body { margin: 0; overflow: hidden; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset calc(var(--board) * .0019) calc(var(--board) * .0031) calc(var(--board) * .0018) #fffcf0b0,
-    inset calc(var(--board) * -.0022) calc(var(--board) * -.0045) calc(var(--board) * .0045) #2419015c;
+  --edge: clamp(1px, calc(var(--board) * .0026), 2.25px);
+  box-shadow:
+    inset 0 var(--edge) calc(var(--edge) * .62) #fff9eddf,
+    inset calc(var(--edge) * .76) 0 calc(var(--edge) * .52) #fff9ed9e,
+    inset var(--edge) calc(var(--edge) * 1.65) calc(var(--edge) * 2.2) #fff0ce38,
+    inset calc(var(--edge) * -.72) calc(var(--edge) * -1.3) calc(var(--edge) * .76) #2c160c83,
+    inset calc(var(--edge) * -1.4) calc(var(--edge) * -2.4) calc(var(--edge) * 2.6) #36210d43;
 }
 .block .art {
   position: absolute;
