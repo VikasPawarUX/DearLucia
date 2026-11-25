@@ -1,6 +1,6 @@
 import './style.css';
 import { levels } from './levels';
-import { EMPTY, SOLVED, neighbors, shuffle, slide, solved } from './puzzle';
+import { EMPTY, neighbors, shuffle, slide, solved } from './puzzle';
 import { PuzzleView, delay, reducedMotion } from './view';
 import { sound, unlockAudio } from './audio';
 
@@ -12,20 +12,13 @@ function required<T extends HTMLElement>(id: string): T {
 const board = required('board');
 const controls = required('controls');
 const status = required('status');
-const restart = required<HTMLButtonElement>('restart');
-const home = required<HTMLButtonElement>('home');
-const hand = document.querySelector<SVGElement>('#hand')!;
-const menu = required<HTMLDialogElement>('menu');
-const menuTitle = required('menu-title');
-const play = required<HTMLButtonElement>('play');
-const heading = document.querySelector('h1')!;
 const particles = required('particles');
-const progressKey = 'toy-slide-unlocked-v1';
+const progressKey = 'toy-slide-paintings-unlocked-v1';
 
 function restore(): number {
   try {
     const saved = Number(localStorage.getItem(progressKey));
-    return Number.isInteger(saved) && saved >= 0 && saved <= levels.length ? saved : 0;
+    return Number.isInteger(saved) && saved >= 0 && saved < levels.length ? saved : 0;
   } catch { return 0; }
 }
 
@@ -34,13 +27,9 @@ function save(progress: number): void {
   catch { /* Play remains available when storage is blocked. */ }
 }
 
-const savedProgress = restore();
-let levelIndex = Math.min(savedProgress, levels.length - 1);
-let complete = savedProgress === levels.length;
+let levelIndex = restore();
 let layout: number[] = [];
-let startingLayout: number[] = [];
 let busy = false;
-let tutorialSeen = false;
 let pointer: { id: number; index: number; x: number; y: number } | undefined;
 let suppressClick = false;
 
@@ -68,24 +57,6 @@ function updateCells(): void {
   });
 }
 
-function tutorial(): void {
-  if (levelIndex !== 0 || tutorialSeen || complete) {
-    hand.style.display = 'none';
-    return;
-  }
-  const empty = layout.indexOf(EMPTY);
-  const correct = neighbors(empty).find(i => layout[i] === empty);
-  if (correct === undefined) {
-    hand.style.display = 'none';
-    return;
-  }
-  hand.style.display = '';
-  hand.style.left = `${(correct % 3 + .46) * 100 / 3 - 4.2}%`;
-  hand.style.top = `${(Math.floor(correct / 3) + .50) * 100 / 3 - 2.2}%`;
-  hand.style.setProperty('--hand-x', `${(empty % 3 - correct % 3) * 256}%`);
-  hand.style.setProperty('--hand-y', `${(Math.floor(empty / 3) - Math.floor(correct / 3)) * 230}%`);
-}
-
 function celebration(): void {
   if (reducedMotion.matches) return;
   const colors = ['#f65d7d', '#fff083', '#6ed8d4', '#a391ec', '#fff3e5', '#ffae64'];
@@ -110,67 +81,34 @@ function celebration(): void {
   }
 }
 
-let view: PuzzleView;
-try {
-  view = new PuzzleView(required('scene'));
-  startLevel();
-} catch (error) {
-  console.error(error);
-  menuTitle.textContent = '3D rendering is unavailable';
-  play.hidden = true;
-  menu.showModal();
-  throw error;
-}
+const view = new PuzzleView(required('tiles'), required('painting'));
+startLevel();
 
 function startLevel(): void {
   const level = levels[levelIndex];
-  heading.textContent = `Level ${levelIndex + 1}`;
-  document.body.style.backgroundColor = level.background;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', level.background);
-  startingLayout = shuffle(level.shuffleMoves);
-  layout = complete ? [...SOLVED] : [...startingLayout];
-  view.load(level.createModel(), layout, complete);
+  layout = shuffle(level.shuffleMoves);
+  view.load(level.artwork, layout);
   busy = false;
-  restart.disabled = false;
-  home.disabled = false;
   updateCells();
-  tutorial();
   status.textContent = level.name;
-  if (!reducedMotion.matches) {
-    board.animate([{ opacity: 0, scale: .97 }, { opacity: 1, scale: 1 }], { duration: 360, easing: 'ease-out' });
-  }
-  if (complete) showMenu();
-}
-
-function showMenu(): void {
-  menuTitle.textContent = complete ? 'Puzzle complete!' : 'Toy Slide';
-  play.textContent = complete ? 'Play again' : 'Continue';
-  if (!menu.open) menu.showModal();
 }
 
 async function move(index: number): Promise<void> {
-  if (busy || complete || menu.open) return;
+  if (busy) return;
   const tile = layout[index];
   const destination = slide(layout, index);
   if (destination === undefined) return;
   busy = true;
-  if (tile === destination) tutorialSeen = true;
-  tutorial();
   updateCells();
-  restart.disabled = true;
-  home.disabled = true;
   sound.slide();
   await view.move(tile, destination);
   sound.settle();
   if (!solved(layout)) {
     busy = false;
-    restart.disabled = false;
-    home.disabled = false;
     updateCells();
     if (document.activeElement === cells[index]) cells[destination].focus({ preventScroll: true });
     return;
   }
-  save(levelIndex + 1);
   await delay(reducedMotion.matches ? 100 : 330);
   await view.stamp();
   sound.stamp();
@@ -185,13 +123,13 @@ async function move(index: number): Promise<void> {
   celebration();
   setTimeout(sound.celebrate, 130);
   status.textContent = `${levels[levelIndex].name} complete`;
-  await delay(1650);
+  await delay(reducedMotion.matches ? 0 : 150);
+  await view.reveal();
   if (levelIndex + 1 < levels.length) {
+    save(levelIndex + 1);
+    await delay(1650);
     levelIndex++;
     startLevel();
-  } else {
-    complete = true;
-    showMenu();
   }
 }
 
@@ -199,7 +137,7 @@ controls.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0) return;
   suppressClick = false;
   const index = cells.indexOf(event.target as HTMLButtonElement);
-  if (index < 0 || busy || complete) return;
+  if (index < 0 || busy) return;
   unlockAudio();
   pointer = { id: event.pointerId, index, x: event.clientX, y: event.clientY };
   cells[index].setPointerCapture(event.pointerId);
@@ -220,29 +158,4 @@ controls.addEventListener('pointerup', event => {
 
 controls.addEventListener('pointercancel', event => {
   if (pointer?.id === event.pointerId) pointer = undefined;
-});
-
-restart.addEventListener('click', () => {
-  if (busy || complete) return;
-  unlockAudio();
-  layout = [...startingLayout];
-  view.reset(layout);
-  updateCells();
-  tutorial();
-});
-home.addEventListener('click', () => {
-  if (busy) return;
-  unlockAudio();
-  showMenu();
-});
-menu.addEventListener('cancel', event => {
-  if (complete) event.preventDefault();
-});
-play.addEventListener('click', () => {
-  unlockAudio();
-  if (!complete) return;
-  complete = false;
-  levelIndex = 0;
-  save(0);
-  startLevel();
 });

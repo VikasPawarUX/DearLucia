@@ -1,124 +1,82 @@
-import * as T from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { cellPosition, divideModel, disposeTiles } from './geometry';
-import { createFrame } from './frame';
 import { EMPTY } from './puzzle';
 
-const ease = (t: number) => 1 - (1 - t) ** 3;
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 export const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
+function position(index: number): string {
+  return `translate(${(index % 3) * 100}%, ${Math.floor(index / 3) * 100}%)`;
+}
+
 export class PuzzleView {
-  private renderer = new T.WebGLRenderer({ alpha: true, antialias: true });
-  private scene = new T.Scene();
-  private camera = new T.OrthographicCamera(-2.18, 2.18, 2.18, -2.18, .1, 30);
-  private tiles: T.Group[] = [];
+  private readonly tiles: HTMLDivElement[];
+  private tilePositions: number[] = [];
 
-  constructor(host: HTMLElement) {
-    const renderer = this.renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = T.PCFShadowMap;
-    renderer.toneMapping = T.NeutralToneMapping;
-    renderer.toneMappingExposure = 1;
-    host.append(renderer.domElement);
-    const tilt = T.MathUtils.degToRad(10);
-    this.camera.position.set(.39, Math.sin(tilt) * 8, Math.cos(tilt) * 8);
-    this.camera.lookAt(0, 0, 0);
-    this.scene.add(createFrame());
-    this.scene.add(new T.HemisphereLight(0xfffbf4, 0xcabcb1, 2.02));
-    const light = new T.DirectionalLight(0xfff4e6, 1.65);
-    light.position.set(-2.8, 3.8, 9);
-    light.castShadow = true;
-    light.shadow.mapSize.set(1024, 1024);
-    Object.assign(light.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3, near: .5, far: 17 });
-    light.shadow.normalBias = .007;
-    light.shadow.bias = -.0001;
-    light.shadow.radius = 5;
-    light.shadow.intensity = .52;
-    this.scene.add(light);
-    const fill = new T.DirectionalLight(0xe3e8ff, .43);
-    fill.position.set(4, -2, 5);
-    this.scene.add(fill);
-    const resize = () => {
-      const size = host.clientWidth;
-      if (size > 0) renderer.setSize(size, size, false);
-      this.draw();
-    };
-    new ResizeObserver(resize).observe(host);
-    resize();
-  }
-
-  load(model: T.Group, layout: readonly number[], showFinal = false): void {
-    disposeTiles(this.tiles);
-    this.tiles = divideModel(model);
-    const ivory = new T.MeshStandardMaterial({ color: '#fff2dc', roughness: .91, metalness: 0 });
-    const geometry = new RoundedBoxGeometry(.976, .976, .14, 4, .026);
-    for (const tile of this.tiles) {
-      const base = new T.Mesh(geometry, ivory);
-      base.receiveShadow = true;
-      tile.add(base);
-      this.scene.add(tile);
-    }
-    this.reset(layout, showFinal);
-  }
-
-  reset(layout: readonly number[], showFinal = false): void {
-    layout.forEach((tile, index) => {
-      const mesh = this.tiles[tile];
-      mesh.position.copy(cellPosition(index));
-      mesh.scale.setScalar(1);
-      mesh.visible = tile !== EMPTY || showFinal;
+  constructor(private host: HTMLElement, private painting: HTMLElement) {
+    this.tiles = Array.from({ length: 9 }, (_, index) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.setProperty('--source-x', String(index % 3));
+      tile.style.setProperty('--source-y', String(Math.floor(index / 3)));
+      const block = document.createElement('div');
+      block.className = 'block';
+      const art = document.createElement('div');
+      art.className = 'art';
+      block.append(art);
+      tile.append(block);
+      host.append(tile);
+      return tile;
     });
-    this.draw();
+  }
+
+  load(artwork: string, layout: readonly number[]): void {
+    const image = `url("${artwork}")`;
+    this.host.style.setProperty('--art', image);
+    this.painting.style.setProperty('--art', image);
+    this.painting.style.opacity = '0';
+    this.host.style.opacity = '1';
+    layout.forEach((tile, index) => {
+      this.tilePositions[tile] = index;
+      this.tiles[tile].style.transform = position(index);
+      this.tiles[tile].hidden = tile === EMPTY;
+    });
   }
 
   async move(tile: number, index: number): Promise<void> {
-    const mesh = this.tiles[tile];
-    const from = mesh.position.clone();
-    const to = cellPosition(index);
-    await this.animate(190, t => {
-      mesh.position.lerpVectors(from, to, ease(t));
-      mesh.position.z = Math.sin(Math.PI * t) * .045;
-    });
-    mesh.position.copy(to);
-    this.draw();
+    const piece = this.tiles[tile];
+    const from = position(this.tilePositions[tile]);
+    const to = position(index);
+    this.tilePositions[tile] = index;
+    piece.style.transform = to;
+    if (!reducedMotion.matches) {
+      await piece.animate([{ transform: from }, { transform: to }], {
+        duration: 185, easing: 'cubic-bezier(.25,.75,.23,1)',
+      }).finished;
+    }
   }
 
   async stamp(): Promise<void> {
-    const mesh = this.tiles[EMPTY];
-    const to = cellPosition(EMPTY);
-    mesh.visible = true;
-    await this.animate(510, t => {
-      const progress = t ** 2.5;
-      mesh.position.set(to.x + .12 * (1 - progress), to.y + .82 * (1 - progress), 1.2 * (1 - progress));
-      mesh.scale.setScalar(1 + .32 * (1 - progress));
-    });
-    mesh.position.copy(to);
-    mesh.scale.setScalar(1);
-    this.draw();
-  }
-
-  private draw(): void {
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  private animate(duration: number, update: (t: number) => void): Promise<void> {
-    if (reducedMotion.matches) {
-      update(1);
-      this.draw();
-      return Promise.resolve();
+    const tile = this.tiles[EMPTY];
+    const landed = position(EMPTY);
+    tile.hidden = false;
+    tile.style.transform = landed;
+    if (!reducedMotion.matches) {
+      tile.style.zIndex = '1';
+      await tile.animate([
+        { transform: `${landed} translateY(-23%) scale(1.14)`, opacity: 0, filter: 'drop-shadow(0 16px 12px #3a210c60)' },
+        { transform: `${landed} translateY(-23%) scale(1.14)`, opacity: 1, filter: 'drop-shadow(0 16px 12px #3a210c60)', offset: .2 },
+        { transform: landed, opacity: 1, filter: 'drop-shadow(0 0 0 transparent)' },
+      ], { duration: 490, easing: 'cubic-bezier(.68,.1,.84,.49)' }).finished;
+      tile.style.zIndex = '';
     }
-    return new Promise(resolve => {
-      const start = performance.now();
-      const frame = (now: number) => {
-        const t = Math.min(1, (now - start) / duration);
-        update(t);
-        this.draw();
-        if (t < 1) requestAnimationFrame(frame);
-        else resolve();
-      };
-      requestAnimationFrame(frame);
-    });
+  }
+
+  async reveal(): Promise<void> {
+    this.painting.style.opacity = '1';
+    if (!reducedMotion.matches) {
+      await this.painting.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 620, easing: 'ease-in-out',
+      }).finished;
+    }
+    this.host.style.opacity = '0';
   }
 }

@@ -3,28 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F5C9DD">
-<meta name="description" content="Slide the pieces and put a tiny red toy car back together.">
+<meta name="theme-color" content="#faf1e5">
+<meta name="description" content="Restore a sunflower painting in a quiet wooden sliding puzzle.">
 <title>Toy Slide</title>
 </head>
 <body>
-<main id="game" class="game">
-  <header class="hud">
-    <button id="home" class="round" aria-label="Home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3.8 14.2 14.3 4a2.4 2.4 0 0 1 3.4 0l10.5 10.2a1.7 1.7 0 0 1-1.2 3h-1.4v9a1.8 1.8 0 0 1-1.8 1.8h-4.3a1.3 1.3 0 0 1-1.3-1.3v-5.4a1.4 1.4 0 0 0-1.4-1.4h-1.6a1.4 1.4 0 0 0-1.4 1.4v5.4a1.3 1.3 0 0 1-1.3 1.3H8.2a1.8 1.8 0 0 1-1.8-1.8v-9H5a1.7 1.7 0 0 1-1.2-3Z"/></svg></button>
-    <h1>Level 1</h1>
-    <button id="restart" class="round" aria-label="Restart level"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M27 5v8h-8M27 13a11.3 11.3 0 1 0-.3 8.4" fill="none" stroke="currentColor" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  </header>
-  <section id="board" class="board" aria-label="Sliding puzzle">
-    <div class="board-shadow"></div><div id="scene"></div><div id="controls"></div>
-    <svg id="hand" class="hand" viewBox="0 0 48 54" aria-hidden="true"><path d="M16 26V10a4 4 0 0 1 8 0v13a4 4 0 0 1 7 0 4 4 0 0 1 7 2 4 4 0 0 1 7 3v9c0 8-6 14-14 14h-4c-5 0-8-2-11-6L6 32a4 4 0 0 1 6-5l4 4z" fill="#fff8e9" stroke="#695087" stroke-width="2.7" stroke-linejoin="round"/></svg>
+<main class="game">
+  <section id="board" class="frame" aria-label="Sliding painting puzzle">
+    <div class="frame-rails" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="frame-rabbet" aria-hidden="true"></div>
+    <div class="picture">
+      <div id="tiles" class="tiles" aria-hidden="true"></div>
+      <div id="painting" class="painting" aria-hidden="true"></div>
+      <div id="controls" class="controls"></div>
+    </div>
   </section>
   <div id="particles" aria-hidden="true"></div>
   <div id="status" class="sr-only" role="status"></div>
 </main>
-<dialog id="menu">
-  <p id="menu-title">Toy Slide</p>
-  <form method="dialog"><button id="play">Continue</button></form>
-</dialog>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
