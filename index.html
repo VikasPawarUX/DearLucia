@@ -133,10 +133,27 @@
       </button>
       <div id="settings-controls" class="settings-panel">
         <h2 id="settings-title">Settings</h2>
-        <label class="volume-setting">Music <input id="music-volume" type="range" min="0" max="100" step="1"></label>
-        <label class="volume-setting">Sound effects <input id="effects-volume" type="range" min="0" max="100" step="1"></label>
-        <label class="mute-setting"><input id="mute-audio" type="checkbox"> Mute all audio</label>
-        <button id="delete-progress" class="settings-action settings-danger" type="button">Delete Progress</button>
+        <div class="settings-buttons">
+          <button id="toggle-music" class="round-button sound-toggle" type="button" aria-pressed="true" aria-label="Music" title="Music">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 17.5V5.5l10-2v12"/>
+              <path d="M9 17.5a2.6 2.1 0 1 1-5.2 0 2.6 2.1 0 1 1 5.2 0Zm10-2a2.6 2.1 0 1 1-5.2 0 2.6 2.1 0 1 1 5.2 0Z"/>
+              <path class="sound-off-slash" d="m4 4 16 16"/>
+            </svg>
+          </button>
+          <button id="toggle-effects" class="round-button sound-toggle" type="button" aria-pressed="true" aria-label="Sound effects" title="Sound effects">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11 5.5 6.5 9H3.5v6h3l4.5 3.5v-13Z"/>
+              <path class="sound-waves" d="M15 9.2a4 4 0 0 1 0 5.6m2.8-8.4a8 8 0 0 1 0 11.2"/>
+              <path class="sound-off-slash" d="m15 9.5 5 5m0-5-5 5"/>
+            </svg>
+          </button>
+          <button id="delete-progress" class="round-button danger-button" type="button" aria-label="Delete progress" title="Delete progress">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12M10 11v6m4-6v6"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div id="delete-progress-panel" class="settings-panel" hidden>
         <h2 id="delete-progress-title">Delete progress?</h2>

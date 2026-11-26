@@ -13,6 +13,14 @@ Open the URL printed by Vite. The production build is in `dist/`. Use `?level=1`
 
 The catalog in `src/levels.ts` defines each memory’s ID, title, narration, square painting, minimum solution length, missing piece (`gap`), and starting board. The missing piece is the empty space during play and is stamped back in last, so each memory ends on its focal point: Lucia’s face, the top of the Eiffel Tower, the balloon, the birthday candles, and so on. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
 
+## Website deploy
+
+```sh
+pnpm deploy:site
+```
+
+This builds the website for https://www.vikaspawar.online/dearlucia/ into `dist-site/dearlucia/` and publishes it to the `dear-lucia` Cloudflare Worker described in `wrangler.jsonc`. It uploads a new version and sends all traffic to it, so the routes on vikaspawar.online are never changed and the previous version stays available for rollback under Workers → dear-lucia → Deployments in the Cloudflare dashboard. The first run asks you to sign in with `pnpm exec wrangler login`. Use `pnpm build:site && node scripts/deploy-site.mjs --dry-run` to check a build without publishing it.
+
 ## Poki build
 
 ```sh
@@ -70,4 +78,4 @@ The playable painting assets are in `src/assets/`. The family portrait and earli
 
 ## Audio
 
-Music begins on the first interaction and plays continuously across memories. On a keyboard, **M** toggles mute, **[** and **]** adjust music, and **Shift + [** and **Shift + ]** adjust effects. Settings are saved locally. See [audio credits](assets/audio/CREDITS.md) for track sources and licenses.
+Music begins on the first interaction and plays continuously across memories. Settings has round buttons to switch music and sound effects on or off, and to delete saved progress. On a keyboard, **M** toggles mute, **[** and **]** adjust music, and **Shift + [** and **Shift + ]** adjust effects. Settings are saved locally. See [audio credits](assets/audio/CREDITS.md) for track sources and licenses.

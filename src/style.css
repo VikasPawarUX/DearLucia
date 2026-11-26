@@ -532,9 +532,45 @@ body { margin: 0; overflow-x: hidden; }
 .settings-dialog::backdrop { background: #44271455; }
 .settings-panel { display: grid; gap: 16px; }
 .settings-dialog h2 { margin: 0 0 3px; text-align: center; font: 700 27px 'Playfair Display', Georgia, serif; }
-.volume-setting { display: grid; gap: 5px; }
-.mute-setting { display: flex; align-items: center; gap: 7px; }
-.settings-dialog input { accent-color: #a16a3e; }
+.settings-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 4px 0 2px;
+}
+/* Same look as the corner buttons, always visible. */
+.round-button {
+  color: #895a32;
+  background: #f8e8d2;
+  border: 2px solid #ba874d6b;
+  box-shadow: inset 0 1px 0 #fff8e9, 0 2px 6px #85501b19;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: var(--corner-size);
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 50%;
+  transition: transform 220ms ease, background-color 220ms ease, color 220ms ease, opacity 220ms ease;
+}
+.round-button svg {
+  width: 51%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.round-button:hover { background: #f5dfc0; }
+.round-button:active { transform: scale(.94); box-shadow: none; }
+.round-button:focus-visible { outline: 2px solid #a36a35; outline-offset: 3px; }
+/* Off: a faded button with the icon struck through (music) or crossed (effects). */
+.sound-off-slash { display: none; }
+.sound-toggle[aria-pressed="false"] { color: #b0916f; background: #f1e4d2; border-style: dashed; }
+.sound-toggle[aria-pressed="false"] .sound-off-slash { display: inline; }
+.sound-toggle[aria-pressed="false"] .sound-waves { display: none; }
+.danger-button { color: #9a382c; border-color: #9a382c59; }
+.danger-button:hover { background: #f6dcd2; }
 .settings-action {
   justify-self: center;
   padding: 6px 20px;
@@ -582,7 +618,7 @@ body { margin: 0; overflow-x: hidden; }
 .settings-danger { background: #9a382c; border-color: #9a382c; color: #fff; }
 #delete-progress-error { color: #9a382c; }
 @media (prefers-reduced-motion: reduce) {
-  .corner-button, .settings-action, .settings-close { transition: none; }
+  .corner-button, .round-button, .settings-action, .settings-close { transition: none; }
   .cell.is-hinted, .hint-button.is-active { animation: none; }
   .corner-button:not(:disabled):active, .settings-action:active, .settings-close:active { transform: none; }
 }

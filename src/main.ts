@@ -47,9 +47,8 @@ const deleteProgressPanel = required('delete-progress-panel');
 const deleteProgressButton = required('delete-progress');
 const cancelDeleteProgress = required('cancel-delete-progress');
 const deleteProgressError = required('delete-progress-error');
-const musicVolume = required<HTMLInputElement>('music-volume');
-const effectsVolume = required<HTMLInputElement>('effects-volume');
-const muteAudio = required<HTMLInputElement>('mute-audio');
+const musicToggle = required<HTMLButtonElement>('toggle-music');
+const effectsToggle = required<HTMLButtonElement>('toggle-effects');
 const tutorial = document.querySelector<SVGSVGElement>('#tutorial')!;
 const hintKey = 'toy-slide-hints-v1';
 const freeHints = 5;
@@ -132,10 +131,12 @@ function unlockFromPointer(): void { audio.unlock(); }
 window.addEventListener('pointerdown', unlockFromPointer, { capture: true, passive: true });
 window.addEventListener('pointerup', unlockFromPointer, { capture: true, passive: true });
 function refreshAudioControls(): void {
-  const settings = audio.settings;
-  musicVolume.value = String(Math.round(settings.music * 100));
-  effectsVolume.value = String(Math.round(settings.effects * 100));
-  muteAudio.checked = settings.muted;
+  for (const [button, channel] of [[musicToggle, 'music'], [effectsToggle, 'effects']] as const) {
+    const on = audio.isOn(channel);
+    button.setAttribute('aria-pressed', String(on));
+    const name = channel === 'music' ? 'Music' : 'Sound effects';
+    button.title = `${name}: ${on ? 'on' : 'off'}`;
+  }
 }
 
 function showDeleteConfirmation(show: boolean): void {
@@ -272,9 +273,17 @@ returnHome.addEventListener('click', async () => {
   await startLevel();
 });
 
-musicVolume.addEventListener('input', () => audio.setMusicVolume(musicVolume.valueAsNumber / 100));
-effectsVolume.addEventListener('input', () => audio.setEffectsVolume(effectsVolume.valueAsNumber / 100));
-muteAudio.addEventListener('change', () => audio.setMuted(muteAudio.checked));
+musicToggle.addEventListener('click', () => {
+  audio.setOn('music', !audio.isOn('music'));
+  audio.play('tap');
+  refreshAudioControls();
+});
+effectsToggle.addEventListener('click', () => {
+  audio.setOn('effects', !audio.isOn('effects'));
+  // Plays only when effects just came on, so switching them on is heard and off is silent.
+  audio.play('tap');
+  refreshAudioControls();
+});
 
 window.addEventListener('keydown', event => {
   if (poki.adPlaying || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;

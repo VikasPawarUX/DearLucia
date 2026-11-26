@@ -40,6 +40,9 @@ export class AudioManager {
   private music?: GainNode;
   private effects?: GainNode;
   private prefs = preferences();
+  // Volumes to bring back when a channel is switched on again from the settings buttons.
+  private lastMusic = this.prefs.music || .25;
+  private lastEffects = this.prefs.effects || 1;
   private focused = true;
   private adPaused = false;
   private audible = false;
@@ -101,11 +104,41 @@ export class AudioManager {
   get settings(): Readonly<Preferences> { return { ...this.prefs }; }
 
   setMusicVolume(value: number): void {
-    if (Number.isFinite(value)) this.setPreferences({ music: clamp(value) });
+    if (!Number.isFinite(value)) return;
+    if (value > 0) this.lastMusic = clamp(value);
+    this.setPreferences({ music: clamp(value) });
   }
 
   setEffectsVolume(value: number): void {
-    if (Number.isFinite(value)) this.setPreferences({ effects: clamp(value) });
+    if (!Number.isFinite(value)) return;
+    if (value > 0) this.lastEffects = clamp(value);
+    this.setPreferences({ effects: clamp(value) });
+  }
+
+  /** Whether music or sound effects can currently be heard (on, with volume, and not muted). */
+  isOn(channel: 'music' | 'effects'): boolean {
+    return !this.prefs.muted && this.prefs[channel] > 0;
+  }
+
+  /** Switch music or sound effects on or off, restoring the last volume when switching on. */
+  setOn(channel: 'music' | 'effects', on: boolean): void {
+    const next = { ...this.prefs };
+    if (next.muted) {
+      // A global mute (M key) becomes "both off", so one channel can come back on alone.
+      if (next.music > 0) this.lastMusic = next.music;
+      if (next.effects > 0) this.lastEffects = next.effects;
+      next.music = 0;
+      next.effects = 0;
+      next.muted = false;
+    }
+    if (channel === 'music') {
+      if (!on && next.music > 0) this.lastMusic = next.music;
+      next.music = on ? this.lastMusic : 0;
+    } else {
+      if (!on && next.effects > 0) this.lastEffects = next.effects;
+      next.effects = on ? this.lastEffects : 0;
+    }
+    this.setPreferences(next);
   }
 
   adjustMusic(delta: number): void { this.setMusicVolume(this.prefs.music + delta); }
