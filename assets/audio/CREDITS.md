@@ -15,7 +15,7 @@
 | `music/vaporware.m4a` | Vaporware, The Cynic Project (cynicmusic) | [Creator’s OpenGameArt release](https://opengameart.org/content/calm-piano-1-vaporware), CC0 1.0 |
 | `music/first-light.m4a` | First Light Particles, Yoiyami | [Creator’s OpenGameArt release](https://opengameart.org/node/182244), CC0 1.0 |
 
-These source releases list [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), which permits commercial use and redistribution. The local copies were loudness-normalized and encoded to AAC for browser playback.
+These source releases list [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), which permits commercial use and redistribution. The local copies were loudness-normalized and encoded to HE-AAC (48 kbps) for browser playback.
 
 ## Sound effects
 
