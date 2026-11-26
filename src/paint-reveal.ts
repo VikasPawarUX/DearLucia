@@ -13,9 +13,22 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
   title.classList.add('is-painting');
 
   const canvas = document.createElement('canvas');
+  let picture: CanvasImageSource | undefined;
   try {
     const text = title.firstChild;
-    if (artwork) await artwork.decode();
+    // Safari can hand back a partly decoded image (only its top part painted), which would leave
+    // the reveal showing half a logo. Wait for the full load, then copy it to a decoded bitmap.
+    if (artwork) {
+      if (!artwork.complete) {
+        // An error also ends the wait (decode() then rejects), so the title screen can never hang.
+        await new Promise(resolve => {
+          artwork.addEventListener('load', resolve, { once: true });
+          artwork.addEventListener('error', resolve, { once: true });
+        });
+      }
+      await artwork.decode();
+      picture = await createImageBitmap(artwork).catch(() => artwork);
+    }
     else if (text instanceof Text) await document.fonts.load(font, text.data);
     else return;
     const style = getComputedStyle(title);
@@ -37,7 +50,7 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
     glyphs.scale(ratio, ratio);
     const capHeight = artwork ? box.height * .48 : parseFloat(style.fontSize);
     if (artwork) {
-      glyphs.drawImage(artwork, 4, 4, box.width, box.height);
+      glyphs.drawImage(picture ?? artwork, 4, 4, box.width, box.height);
     } else if (text instanceof Text) {
       glyphs.font = font;
       const metrics = glyphs.measureText(text.data);
@@ -91,7 +104,9 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
       return {
         x, y, outline,
         angle: random(-1.35, 1.35),
-        start: random(0, .5),
+        // Patches start in a left-to-right sweep with a little jitter, so the title paints in like a
+        // brush stroke instead of random blotches that can leave one side missing for a moment.
+        start: Math.min(.5, x / width * .42 + random(0, .08)),
         size: capHeight * random(.31, .78),
         color: pigments[Math.floor(random(0, pigments.length))],
       };
@@ -142,6 +157,7 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
       requestAnimationFrame(draw);
     });
   } finally {
+    if (typeof ImageBitmap !== 'undefined' && picture instanceof ImageBitmap) picture.close();
     canvas.remove();
     title.classList.remove('is-painting');
   }

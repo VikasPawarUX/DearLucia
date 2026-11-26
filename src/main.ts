@@ -188,6 +188,8 @@ settingsButton.addEventListener('click', async () => {
   showDeleteConfirmation(false);
   settingsTransition = true;
   settingsDialog.showModal();
+  // Start focus on the dialog itself, so no button opens with a focus ring; Tab still reaches them.
+  settingsDialog.focus();
   await animateSettings(settingsDialog, true);
   settingsTransition = false;
 });
@@ -323,7 +325,13 @@ async function startGame(): Promise<void> {
   const splash = required('splash');
   const title = required('splash-title');
   const artwork = required<HTMLImageElement>('splash-artwork');
-  const minimumDisplay = Promise.all([delay(2000), poki.ready]);
+  // On the website the title holds for at least 2 seconds. On Poki it stays only while loading:
+  // the SDK, and the first memory's painting, so the game never appears without its artwork.
+  const firstArtwork = new Image();
+  firstArtwork.src = levels[levelIndex].artwork;
+  const minimumDisplay = poki.enabled
+    ? Promise.all([poki.ready, firstArtwork.decode().catch(() => {})])
+    : Promise.all([delay(2000), poki.ready]);
   if (reducedMotion.matches) {
     await artwork.decode().catch(() => {});
     title.classList.remove('is-painting');
