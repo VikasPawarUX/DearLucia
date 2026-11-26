@@ -163,17 +163,18 @@
               <path class="sound-off-slash" d="m15 9.5 5 5m0-5-5 5"/>
             </svg>
           </button>
+          <button id="language-button" class="round-button flag-button" type="button" aria-haspopup="true" aria-label="Language" title="Language"></button>
           <button id="delete-progress" class="round-button danger-button" type="button" aria-label="Delete progress" title="Delete progress" data-i18n-aria="settings.deleteProgress" data-i18n-title="settings.deleteProgress">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12M10 11v6m4-6v6"/>
             </svg>
           </button>
         </div>
-        <label class="language-setting">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5S14.4 18.1 12 20.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5"/></svg>
-          <select id="language-select" aria-label="Language" data-i18n-aria="language.label"></select>
-        </label>
         <p class="settings-credit"><span class="credit-love"><span data-i18n="credit.before">Made with love</span>&nbsp;<svg class="credit-heart" viewBox="4.5 6.17 15 14.33" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg></span> <span data-i18n="credit.after">by a father</span></p>
+      </div>
+      <div id="language-panel" class="settings-panel" hidden>
+        <h2 id="language-title" data-i18n="language.label">Language</h2>
+        <div id="language-grid" class="language-grid" role="group" aria-labelledby="language-title"></div>
       </div>
       <div id="delete-progress-panel" class="settings-panel" hidden>
         <h2 id="delete-progress-title" data-i18n="delete.title">Delete progress?</h2>

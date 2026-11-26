@@ -7,7 +7,8 @@ import { celebrate } from './confetti';
 import { audio } from './audio';
 import { poki } from './poki';
 import { createAdPolicy } from './ads';
-import { currentLanguage, isLanguage, languages, memoryStory as storyText, memoryTitle as titleText, pickLanguage, savedLanguage, setLanguage, t, translatePage } from './i18n';
+import { flag } from './flags';
+import { currentLanguage, languages, memoryStory as storyText, memoryTitle as titleText, pickLanguage, savedLanguage, setLanguage, t, translatePage } from './i18n';
 
 function required<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -206,14 +207,22 @@ function refreshAudioControls(): void {
   }
 }
 
-function showDeleteConfirmation(show: boolean): void {
-  settingsControls.hidden = show;
+// The Settings dialog shows one panel at a time: the main buttons, the language flags, or the
+// delete confirmation.
+type Panel = 'settings' | 'language' | 'delete';
+const languagePanel = required('language-panel');
+const panels: Record<Panel, HTMLElement> = { settings: settingsControls, language: languagePanel, delete: deleteProgressPanel };
+const panelTitles: Record<Panel, string> = { settings: 'settings-title', language: 'language-title', delete: 'delete-progress-title' };
+let shownPanel: Panel = 'settings';
+
+function showPanel(panel: Panel): void {
+  shownPanel = panel;
+  for (const [name, element] of Object.entries(panels)) element.hidden = name !== panel;
   // The confirmation has its own round ✕, so the corner ✕ steps aside to avoid two crosses.
-  closeSettingsButton.hidden = show;
-  deleteProgressPanel.hidden = !show;
+  closeSettingsButton.hidden = panel === 'delete';
   deleteProgressError.hidden = true;
-  settingsDialog.setAttribute('aria-labelledby', show ? 'delete-progress-title' : 'settings-title');
-  if (show) settingsDialog.setAttribute('aria-describedby', 'delete-progress-description');
+  settingsDialog.setAttribute('aria-labelledby', panelTitles[panel]);
+  if (panel === 'delete') settingsDialog.setAttribute('aria-describedby', 'delete-progress-description');
   else settingsDialog.removeAttribute('aria-describedby');
 }
 
@@ -229,13 +238,13 @@ async function animateSettings(element: HTMLElement, opening: boolean): Promise<
   }).finished;
 }
 
-async function switchSettingsPanel(confirming: boolean): Promise<void> {
-  if (settingsTransition) return;
+async function switchPanel(panel: Panel, focus: HTMLElement): Promise<void> {
+  if (settingsTransition || panel === shownPanel) return;
   settingsTransition = true;
-  await animateSettings(confirming ? settingsControls : deleteProgressPanel, false);
-  showDeleteConfirmation(confirming);
-  (confirming ? cancelDeleteProgress : deleteProgressButton).focus();
-  await animateSettings(confirming ? deleteProgressPanel : settingsControls, true);
+  await animateSettings(panels[shownPanel], false);
+  showPanel(panel);
+  focus.focus();
+  await animateSettings(panels[panel], true);
   settingsTransition = false;
 }
 
@@ -251,7 +260,7 @@ settingsButton.addEventListener('click', async () => {
   audio.play('tap');
   poki.gameplayStop();
   refreshAudioControls();
-  showDeleteConfirmation(false);
+  showPanel('settings');
   settingsTransition = true;
   settingsDialog.showModal();
   // Start focus on the dialog itself, so no button opens with a focus ring; Tab still reaches them.
@@ -268,10 +277,10 @@ settingsDialog.addEventListener('cancel', event => {
 });
 deleteProgressButton.addEventListener('click', () => {
   audio.play('tap');
-  void switchSettingsPanel(true);
+  void switchPanel('delete', cancelDeleteProgress);
 });
 cancelDeleteProgress.addEventListener('click', () => {
-  void switchSettingsPanel(false);
+  void switchPanel('settings', deleteProgressButton);
 });
 required('confirm-delete-progress').addEventListener('click', async () => {
   if (settingsTransition) return;
@@ -368,17 +377,44 @@ window.addEventListener('resize', () => {
   refitTimer = window.setTimeout(() => { void fitTitle(); }, 120);
 });
 
-// Language: chosen in Settings, shown in each language's own name, applied at once and remembered.
-const languageSelect = required<HTMLSelectElement>('language-select');
-for (const { code, name } of languages) {
-  const option = new Option(name, code);
-  option.lang = code;
-  languageSelect.append(option);
-}
+// Language: a round flag button in Settings opens a grid of round flags. A choice applies at once,
+// keeps all progress, and is remembered. Each flag still carries its language's name for screen
+// readers and as a hover tooltip.
+const languageButton = required<HTMLButtonElement>('language-button');
+const languageGrid = required('language-grid');
+const flagButtons = languages.map(({ code, name }) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'round-button flag-button';
+  button.lang = code;
+  button.title = name;
+  button.setAttribute('aria-label', name);
+  button.innerHTML = flag(code);
+  button.addEventListener('click', async () => {
+    if (settingsTransition) return;
+    audio.play('tap');
+    if (code !== currentLanguage()) {
+      await setLanguage(code, true);
+      applyLanguage();
+    }
+    void switchPanel('settings', languageButton);
+  });
+  languageGrid.append(button);
+  return button;
+});
+languageButton.addEventListener('click', () => {
+  audio.play('tap');
+  void switchPanel('language', flagButtons.find(button => button.lang === currentLanguage()) ?? flagButtons[0]);
+});
+
 /** Show the current language everywhere, without restarting the memory or losing any progress. */
 function applyLanguage(): void {
   translatePage();
-  languageSelect.value = currentLanguage();
+  const current = languages.find(language => language.code === currentLanguage())!;
+  languageButton.innerHTML = flag(current.code);
+  languageButton.title = current.name;
+  languageButton.setAttribute('aria-label', `${t('language.label')}: ${current.name}`);
+  for (const button of flagButtons) button.setAttribute('aria-pressed', String(button.lang === current.code));
   const level = levels[levelIndex];
   if (!story.hidden) {
     memoryNumber.textContent = t('memory.label', { n: level.id, total: levels.length });
@@ -390,12 +426,6 @@ function applyLanguage(): void {
   updateCells();
   refreshAudioControls();
 }
-languageSelect.addEventListener('change', async () => {
-  if (!isLanguage(languageSelect.value)) return;
-  audio.play('tap');
-  await setLanguage(languageSelect.value, true);
-  applyLanguage();
-});
 
 musicToggle.addEventListener('click', () => {
   audio.setOn('music', !audio.isOn('music'));
