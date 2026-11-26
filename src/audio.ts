@@ -1,10 +1,6 @@
 /// <reference types="vite/client" />
+// One calm track loops for the whole game.
 const openingTrack = new URL('../assets/audio/music/etirwer.m4a', import.meta.url).href;
-const musicFiles = [
-  openingTrack,
-  new URL('../assets/audio/music/forget-me-not.m4a', import.meta.url).href,
-  new URL('../assets/audio/music/cute-tune.m4a', import.meta.url).href,
-];
 const effectFiles = import.meta.glob<string>('../assets/audio/sfx/*.wav', {
   eager: true, import: 'default', query: '?url',
 });
@@ -18,7 +14,9 @@ type Cue = keyof typeof cues;
 type Preferences = { music: number; effects: number; muted: boolean };
 type PlayingTrack = { source: AudioBufferSourceNode; gain: GainNode; end: number };
 const key = 'dear-lucia-audio-v1';
-const crossfade = 3;
+// The track ends with a ~1.5 s natural fade. Each new pass starts as that tail begins, easing in
+// over the same 1.5 s, so the loop never drops to silence or restarts with a jolt.
+const crossfade = 1.5;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 function preferences(): Preferences {
@@ -49,12 +47,10 @@ export class AudioManager {
   private pauseTimer?: number;
   private readonly samples = new Map<string, Promise<AudioBuffer>>();
   private readonly voices = new Map<Cue, AudioBufferSourceNode>();
-  private bag: string[] = [];
-  private lastTrack = '';
-  private openingPending = true;
   private openingBytes?: Promise<ArrayBuffer | undefined>;
   private current?: PlayingTrack;
-  private next?: AudioBuffer;
+  /** The decoded music, kept so every pass of the loop replays it without decoding again. */
+  private track?: AudioBuffer;
   private loading = false;
   private retryAt = 0;
 
@@ -241,36 +237,16 @@ export class AudioManager {
     }).catch(() => {});
   }
 
-  private takeTrack(): string | undefined {
-    if (!this.bag.length) {
-      this.bag = [...musicFiles];
-      for (let i = this.bag.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
-      }
-      const last = this.bag.length - 1;
-      const swap = this.openingPending ? this.bag.indexOf(openingTrack) : this.bag[last] === this.lastTrack ? 0 : last;
-      this.openingPending = false;
-      [this.bag[swap], this.bag[last]] = [this.bag[last], this.bag[swap]];
-    }
-    return this.bag.pop();
-  }
-
   private updatePlaylist(): void {
     const ctx = this.context;
     if (!ctx || !this.active || ctx.state !== 'running') return;
     const now = ctx.currentTime;
-    if (this.next && (!this.current || this.current.end - now <= crossfade)) {
-      this.startTrack(this.next);
-      this.next = undefined;
-    }
-    if (this.next || this.loading || now < this.retryAt) return;
-    const url = this.takeTrack();
-    if (!url) return;
+    if (this.track && (!this.current || this.current.end - now <= crossfade)) this.startTrack(this.track);
+    if (this.track || this.loading || now < this.retryAt) return;
+    // Decode once and keep the buffer: every pass of the loop reuses it.
     this.loading = true;
-    void this.decode(url).then(track => {
-      this.lastTrack = url;
-      this.next = track;
+    void this.decode(openingTrack).then(track => {
+      this.track = track;
       this.updatePlaylist();
     }).catch(() => { this.retryAt = ctx.currentTime + 2; }).finally(() => { this.loading = false; });
   }

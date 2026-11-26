@@ -78,4 +78,4 @@ The playable painting assets are in `src/assets/`. The family portrait and earli
 
 ## Audio
 
-Music begins on the first interaction and plays continuously across memories. Settings has round buttons to switch music and sound effects on or off, and to delete saved progress. On a keyboard, **M** toggles mute, **[** and **]** adjust music, and **Shift + [** and **Shift + ]** adjust effects. Settings are saved locally. See [audio credits](assets/audio/CREDITS.md) for track sources and licenses.
+Music begins on the first interaction: one calm track loops through every memory, each pass easing in as the last one fades. Settings has round buttons to switch music and sound effects on or off, and to delete saved progress. On a keyboard, **M** toggles mute, **[** and **]** adjust music, and **Shift + [** and **Shift + ]** adjust effects. Settings are saved locally. See [audio credits](assets/audio/CREDITS.md) for track sources and licenses.
