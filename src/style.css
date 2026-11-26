@@ -520,8 +520,9 @@ body { margin: 0; overflow-x: hidden; }
   50% { box-shadow: inset 0 1px 0 #fffbea, 0 0 0 5px #f3c35a33, 0 0 22px #f2b33d99; }
 }
 .settings-dialog {
-  width: min(86vw, 330px);
-  padding: 24px 27px;
+  /* Snug around the three buttons; the confirmation text wraps within the same width. */
+  width: min(86vw, 264px);
+  padding: 16px 20px 14px;
   color: #783b20;
   background: #faf1e5;
   border: 1px solid #bf925d;
@@ -530,13 +531,12 @@ body { margin: 0; overflow-x: hidden; }
   font: 500 15px / 1.45 Lora, Georgia, serif;
 }
 .settings-dialog::backdrop { background: #44271455; }
-.settings-panel { display: grid; gap: 16px; }
-.settings-dialog h2 { margin: 0 0 3px; text-align: center; font: 700 27px 'Playfair Display', Georgia, serif; }
+.settings-panel { display: grid; gap: 12px; }
+.settings-dialog h2 { margin: 0; text-align: center; font: 700 22px 'Playfair Display', Georgia, serif; }
 .settings-buttons {
   display: flex;
   justify-content: center;
-  gap: 18px;
-  padding: 4px 0 2px;
+  gap: 14px;
 }
 /* Same look as the corner buttons, always visible. */
 .round-button {
@@ -577,12 +577,12 @@ body { margin: 0; overflow-x: hidden; }
 .danger-button.is-solid svg { stroke-width: 2; }
 .settings-close {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 6px;
+  right: 6px;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -593,19 +593,29 @@ body { margin: 0; overflow-x: hidden; }
 }
 .settings-close:hover { background: #f8e8d2; }
 .settings-close svg {
-  width: 18px;
+  width: 16px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
   stroke-linecap: round;
 }
-#delete-progress-panel { padding-top: 14px; }
-.settings-dialog p { margin: 0; text-align: center; }
+#delete-progress-panel { padding-top: 4px; }
+.settings-dialog p { margin: 0; text-align: center; font-size: 14px; line-height: 1.4; }
+.settings-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 2px;
+  color: #9a6b4b;
+  font: italic 500 12.5px / 1.3 Lora, Georgia, serif;
+}
+.settings-credit svg { width: 12px; flex: none; fill: #b3463a; }
 .settings-actions {
   display: flex;
   justify-content: center;
-  gap: 18px;
-  padding-top: 4px;
+  gap: 14px;
+  padding-top: 2px;
 }
 #delete-progress-error { color: #9a382c; }
 @media (prefers-reduced-motion: reduce) {
