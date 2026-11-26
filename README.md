@@ -11,7 +11,15 @@ pnpm build
 
 Open the URL printed by Vite. The production build is in `dist/`. Use `?level=1` to revisit the family portrait while preserving unlocked memories.
 
-The catalog in `src/levels.ts` defines each memory’s ID, title, narration, square painting, minimum solution length, missing piece (`gap`), and starting board. The missing piece is the empty space during play and is stamped back in last, so each memory ends on its focal point: Lucia’s face, the top of the Eiffel Tower, the balloon, the birthday candles, and so on. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
+The catalog in `src/levels.ts` defines each memory’s ID, square painting, minimum solution length, missing piece (`gap`), and starting board; titles and stories live in the locale files. The missing piece is the empty space during play and is stamped back in last, so each memory ends on its focal point: Lucia’s face, the top of the Eiffel Tower, the balloon, the birthday candles, and so on. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
+
+## Languages
+
+English, Français, Deutsch, Español, Italiano, Português (Brazil), Türkçe, Polski and Nederlands. Each language is one file in [`src/locales/`](src/locales/); English (`en.ts`) is the source and the fallback for any missing string, and the other files load only when chosen. [`src/i18n.ts`](src/i18n.ts) holds the language list, lookup (`t()`), detection and switching.
+
+The game starts in the player's saved choice, then Poki's `PokiSDK.getLanguage()`, then the browser's languages, then English. Settings has a language selector showing each language in its own name; a change applies at once without losing progress and is saved locally. Page text is marked with `data-i18n` (text), `data-i18n-aria` and `data-i18n-title` attributes. To add a language, copy a locale file, translate it, and add it to `languages` and `loaders` in `i18n.ts`; the locale tests check that every key and `{placeholder}` is present.
+
+The three fonts cover every letter these languages need. Long titles shrink just enough that their longest word fits on one line rather than being split.
 
 ## Website deploy
 

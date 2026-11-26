@@ -7,6 +7,7 @@ import { celebrate } from './confetti';
 import { audio } from './audio';
 import { poki } from './poki';
 import { createAdPolicy } from './ads';
+import { currentLanguage, isLanguage, languages, memoryStory as storyText, memoryTitle as titleText, pickLanguage, savedLanguage, setLanguage, t, translatePage } from './i18n';
 
 function required<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -104,7 +105,7 @@ function updateHintButton(disabled: boolean): void {
   hintButton.disabled = disabled || (hintsRemaining === 0 && !rewarded);
   hintButton.classList.toggle('is-rewarded', rewarded);
   hintCount.textContent = rewarded ? '🎬' : String(hintsRemaining);
-  hintButton.setAttribute('aria-label', rewarded ? 'Watch an ad for a hint' : `Hint (${hintsRemaining} remaining)`);
+  hintButton.setAttribute('aria-label', rewarded ? t('hint.rewarded') : t('hint.label', { n: hintsRemaining }));
 }
 
 const progressKey = 'toy-slide-paintings-unlocked-v1';
@@ -188,7 +189,7 @@ function updateCells(): void {
     cell.dataset.movable = String(!busy && movable.includes(index));
     cell.tabIndex = !busy && movable.includes(index) ? 0 : -1;
     cell.setAttribute('aria-disabled', String(busy || !movable.includes(index)));
-    cell.setAttribute('aria-label', index === empty ? 'Empty space' : `Tile, row ${Math.floor(index / 3) + 1}, column ${index % 3 + 1}`);
+    cell.setAttribute('aria-label', index === empty ? t('board.empty') : t('board.tile', { row: Math.floor(index / 3) + 1, column: index % 3 + 1 }));
   });
 }
 
@@ -199,8 +200,9 @@ function refreshAudioControls(): void {
   for (const [button, channel] of [[musicToggle, 'music'], [effectsToggle, 'effects']] as const) {
     const on = audio.isOn(channel);
     button.setAttribute('aria-pressed', String(on));
-    const name = channel === 'music' ? 'Music' : 'Sound effects';
-    button.title = `${name}: ${on ? 'on' : 'off'}`;
+    button.title = channel === 'music'
+      ? t(on ? 'settings.musicOn' : 'settings.musicOff')
+      : t(on ? 'settings.effectsOn' : 'settings.effectsOff');
   }
 }
 
@@ -343,6 +345,58 @@ returnHome.addEventListener('click', async () => {
   await startLevel();
 });
 
+// Long words in some languages (German "Weihnachtsmorgen", Polish "Bożonarodzeniowy") are wider
+// than the title's space on small screens. Rather than split a word, the title shrinks just enough
+// for its longest word to fit on one line; other titles keep their normal size.
+let measureContext: CanvasRenderingContext2D | null = null;
+async function fitTitle(): Promise<void> {
+  memoryTitle.style.fontSize = '';
+  const text = memoryTitle.textContent ?? '';
+  const style = getComputedStyle(memoryTitle);
+  const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  await document.fonts.load(font, text).catch(() => {});
+  const width = memoryTitle.parentElement ? memoryTitle.clientWidth : 0;
+  measureContext ??= document.createElement('canvas').getContext('2d');
+  if (!width || !measureContext) return;
+  measureContext.font = font;
+  const longest = Math.max(...text.split(/\s+/).map(word => measureContext!.measureText(word).width));
+  if (longest > width) memoryTitle.style.fontSize = `${parseFloat(style.fontSize) * width / longest * .97}px`;
+}
+let refitTimer: number | undefined;
+window.addEventListener('resize', () => {
+  window.clearTimeout(refitTimer);
+  refitTimer = window.setTimeout(() => { void fitTitle(); }, 120);
+});
+
+// Language: chosen in Settings, shown in each language's own name, applied at once and remembered.
+const languageSelect = required<HTMLSelectElement>('language-select');
+for (const { code, name } of languages) {
+  const option = new Option(name, code);
+  option.lang = code;
+  languageSelect.append(option);
+}
+/** Show the current language everywhere, without restarting the memory or losing any progress. */
+function applyLanguage(): void {
+  translatePage();
+  languageSelect.value = currentLanguage();
+  const level = levels[levelIndex];
+  if (!story.hidden) {
+    memoryNumber.textContent = t('memory.label', { n: level.id, total: levels.length });
+    memoryTitle.textContent = titleText(level.id);
+    narration.textContent = storyText(level.id);
+    renderMoves();
+    void fitTitle();
+  }
+  updateCells();
+  refreshAudioControls();
+}
+languageSelect.addEventListener('change', async () => {
+  if (!isLanguage(languageSelect.value)) return;
+  audio.play('tap');
+  await setLanguage(languageSelect.value, true);
+  applyLanguage();
+});
+
 musicToggle.addEventListener('click', () => {
   audio.setOn('music', !audio.isOn('music'));
   audio.play('tap');
@@ -387,6 +441,9 @@ void startGame();
 
 async function startGame(): Promise<void> {
   audio.preloadOpening();
+  const languageReady = poki.ready
+    .then(() => setLanguage(pickLanguage(savedLanguage(), poki.language(), navigator.languages)))
+    .then(applyLanguage);
   const splash = required('splash');
   const title = required('splash-title');
   const artwork = required<HTMLImageElement>('splash-artwork');
@@ -403,7 +460,7 @@ async function startGame(): Promise<void> {
   } else {
     await paintReveal(title, 0, 1050, artwork).catch(() => {});
   }
-  await minimumDisplay;
+  await Promise.all([minimumDisplay, languageReady]);
   poki.loadingFinished();
   audio.unlock();
   await Promise.all([
@@ -536,11 +593,13 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
   moves = 0;
   renderMoves();
   const artworkReady = view.load(level.artwork, layout, gap);
-  memoryNumber.textContent = `Memory ${level.id} of ${levels.length}`;
+  memoryNumber.textContent = t('memory.label', { n: level.id, total: levels.length });
   perfectSeal.hidden = true;
-  memoryTitle.textContent = level.name;
-  narration.textContent = level.narration;
+  memoryTitle.textContent = titleText(level.id);
+  narration.textContent = storyText(level.id);
   updateCells();
+  story.hidden = false;
+  await fitTitle();
   story.style.opacity = '1';
   story.hidden = false;
   storyViewport.scrollTop = 0;
@@ -559,7 +618,7 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
   // The narration is already fading in by now, so the buttons arrive with it rather than
   // waiting for the tile ripple and every other entrance animation to settle.
   showCornerButtons(true);
-  status.textContent = `Memory ${levels[levelIndex].id} of ${levels.length}`;
+  status.textContent = t('memory.label', { n: levels[levelIndex].id, total: levels.length });
   noteProgress();
   await Promise.all([artworkReady, narrationFinished, tilesFinished]);
 }
@@ -570,7 +629,9 @@ function renderMoves(pulse = false): void {
   count.textContent = String(moves);
   // Past the best possible solution: the count turns red so players know they've gone over.
   count.classList.toggle('is-over', target >= 0 && moves > target);
-  moveCount.replaceChildren('Moves: ', count, `/${target}`);
+  // The template keeps {count} as a marker, so the number can be its own (red when over) element.
+  const [before, after = ''] = t('memory.moves', { target }).split('{count}');
+  moveCount.replaceChildren(before, count, after);
   counterPulse?.cancel();
   if (pulse && !reducedMotion.matches) {
     counterPulse = moveCount.animate([
@@ -605,7 +666,7 @@ async function showEpilogue(animate: boolean): Promise<void> {
   story.classList.add('is-epilogue');
   epilogue.classList.toggle('is-revealing', animate);
   epilogue.hidden = false;
-  status.textContent = 'Chapter 1 complete';
+  status.textContent = t('memory.chapterComplete');
   if (animate) await delay(3000);
   settingsButton.disabled = false;
   settingsButton.classList.add('is-visible');
@@ -664,7 +725,7 @@ async function move(index: number, dragged = 0): Promise<void> {
   const confetti = celebrate(particles);
   await view.celebrate();
   if (perfect) void stampPerfectSeal();
-  status.textContent = `${levels[levelIndex].name} restored${perfect ? ' — perfect!' : ''}`;
+  status.textContent = t(perfect ? 'memory.perfect' : 'memory.restored', { title: titleText(levels[levelIndex].id) });
   audio.play('painting', 0, nextLevel ? 1 : .55);
   await view.reveal();
   const frameCelebration = reducedMotion.matches ? undefined : board.animate([

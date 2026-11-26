@@ -1,7 +1,5 @@
 type Memory = {
   id: number;
-  name: string;
-  narration: string;
   artwork: string;
   minimumMoves: number;
   /** The piece held back as the empty space and stamped in last (0–8, row by row). Defaults to 8. */
@@ -12,16 +10,12 @@ type Memory = {
 export const levels: readonly Memory[] = [
   {
     id: 1,
-    name: 'My Family',
-    narration: 'That’s me, Lucia. And those are my parents. Every painting holds a memory, and these are mine.',
     artwork: new URL('./assets/family-portrait.webp', import.meta.url).href,
     minimumMoves: 2,
     gap: 7,
   },
   {
     id: 2,
-    name: 'Our Trip to Paris',
-    narration: 'Paris, 1978. I was seven when my parents took me on my very first holiday. I’ll never forget seeing the Eiffel Tower.',
     artwork: new URL('./assets/memory-02-paris.webp', import.meta.url).href,
     minimumMoves: 3,
     gap: 1,
@@ -29,8 +23,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 3,
-    name: 'A Taste of Paris',
-    narration: 'Every morning, Papa would bring us freshly baked croissants. I always asked for another.',
     artwork: new URL('./assets/memory-03-croissant.webp', import.meta.url).href,
     minimumMoves: 3,
     gap: 4,
@@ -38,8 +30,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 4,
-    name: 'My Red Balloon',
-    narration: 'One afternoon, Papa bought me a beautiful red balloon. I thought it was the most wonderful thing in the world.',
     artwork: new URL('./assets/memory-04-red-balloon.webp', import.meta.url).href,
     minimumMoves: 4,
     gap: 2,
@@ -47,8 +37,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 5,
-    name: 'Up, Up and Away',
-    narration: 'But a sudden gust of wind carried it away. I cried as I watched it disappear into the sky.',
     artwork: new URL('./assets/memory-05-floating-balloon.webp', import.meta.url).href,
     minimumMoves: 4,
     gap: 2,
@@ -56,8 +44,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 6,
-    name: 'A Sweet Treat',
-    narration: 'Mama bought me a strawberry ice cream to cheer me up. It worked, of course.',
     artwork: new URL('./assets/memory-06-ice-cream.webp', import.meta.url).href,
     minimumMoves: 5,
     gap: 2,
@@ -65,8 +51,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 7,
-    name: 'A Day at Sea',
-    narration: 'During our holiday, we took a little trip to the coast. I loved watching the sailboats drift across the water.',
     artwork: new URL('./assets/memory-07-sailboat.webp', import.meta.url).href,
     minimumMoves: 6,
     gap: 4,
@@ -74,8 +58,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 8,
-    name: 'The Lighthouse',
-    narration: 'Papa pointed towards a tall lighthouse. He told me that its light helped sailors find their way home.',
     artwork: new URL('./assets/memory-08-lighthouse.webp', import.meta.url).href,
     minimumMoves: 5,
     gap: 1,
@@ -83,8 +65,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 9,
-    name: 'The Journey Home',
-    narration: 'On the train home, I fell asleep beside Mama, already dreaming about our next adventure.',
     artwork: new URL('./assets/memory-09-train.webp', import.meta.url).href,
     minimumMoves: 7,
     gap: 5,
@@ -92,8 +72,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 10,
-    name: 'My Eighth Birthday',
-    narration: 'The following spring, I turned eight. Mama baked my favourite chocolate cake.',
     artwork: new URL('./assets/memory-10-birthday-cake.webp', import.meta.url).href,
     minimumMoves: 5,
     gap: 1,
@@ -101,8 +79,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 11,
-    name: 'A Friend Named Oliver',
-    narration: 'Mama gave me a little teddy bear for my birthday. I named him Oliver, and he never left my side.',
     artwork: new URL('./assets/memory-11-oliver.webp', import.meta.url).href,
     minimumMoves: 7,
     gap: 4,
@@ -110,8 +86,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 12,
-    name: 'My First Bicycle',
-    narration: 'Papa taught me how to ride my first bicycle. I fell a few times, but he was always there to catch me.',
     artwork: new URL('./assets/memory-12-bicycle.webp', import.meta.url).href,
     minimumMoves: 6,
     gap: 2,
@@ -119,8 +93,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 13,
-    name: 'A Rainy Afternoon',
-    narration: 'I loved rainy afternoons. Mama and I would walk beneath our yellow umbrella, splashing through puddles.',
     artwork: new URL('./assets/memory-13-umbrella.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 1,
@@ -128,8 +100,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 14,
-    name: 'Letters from Grandma',
-    narration: 'Grandma lived far away, but her letters always made her feel close. Sometimes, she would tuck a little flower inside.',
     artwork: new URL('./assets/memory-14-grandma-letters.webp', import.meta.url).href,
     minimumMoves: 6,
     gap: 2,
@@ -137,8 +107,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 15,
-    name: 'Summer in the Garden',
-    narration: 'That summer, I planted a tiny seed with Papa. Every morning, I would run outside to see how much it had grown.',
     artwork: new URL('./assets/memory-15-sunflower.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 4,
@@ -146,8 +114,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 16,
-    name: 'A Little Visitor',
-    narration: 'One morning, a little kitten appeared in our garden. I gave her some food, and she decided to stay.',
     artwork: new URL('./assets/memory-16-kitten.webp', import.meta.url).href,
     minimumMoves: 7,
     gap: 1,
@@ -155,8 +121,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 17,
-    name: 'The First Snow',
-    narration: 'When winter arrived, Papa and I built a snowman. I gave him my favourite red scarf to keep him warm.',
     artwork: new URL('./assets/memory-17-snowman.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 4,
@@ -164,8 +128,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 18,
-    name: 'Christmas Morning',
-    narration: 'Christmas mornings were magical. Our little home was filled with twinkling lights, laughter and the smell of freshly baked cookies.',
     artwork: new URL('./assets/memory-18-christmas.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 1,
@@ -173,8 +135,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 19,
-    name: 'A Gift from Papa',
-    narration: 'Papa gave me my very first camera. He told me that even the smallest moments were worth remembering.',
     artwork: new URL('./assets/memory-19-camera.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 5,
@@ -182,8 +142,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 20,
-    name: 'Pieces of My Childhood',
-    narration: 'Looking through our old family album, I realise that the happiest moments of my childhood were often the simplest ones.',
     artwork: new URL('./assets/memory-20-childhood-album.webp', import.meta.url).href,
     minimumMoves: 8,
     gap: 4,
@@ -191,8 +149,6 @@ export const levels: readonly Memory[] = [
   },
   {
     id: 21,
-    name: 'Thank You',
-    narration: 'Thank you for putting the pieces of my childhood back together. Some memories fade with time, but the feelings they leave behind stay with us forever.',
     artwork: new URL('./assets/memory-21-thank-you.webp', import.meta.url).href,
     minimumMoves: 7,
     gap: 4,

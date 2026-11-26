@@ -7,6 +7,7 @@ type PokiSDK = {
   gameplayStop(): void;
   commercialBreak(beforeAd?: () => void): Promise<void>;
   rewardedBreak(beforeAd?: () => void): Promise<boolean>;
+  getLanguage?(): string;
 };
 
 /** True for `vite build --mode poki`. The SDK script tag is injected only in that build. */
@@ -59,6 +60,10 @@ export const poki = {
   get adPlaying(): boolean { return adPlaying; },
   ready,
   loadingFinished(): void { sdk?.gameLoadingFinished(); },
+  /** The player's language as Poki detects it: a lowercase base code such as "en" or "pt". */
+  language(): string | undefined {
+    try { return sdk?.getLanguage?.(); } catch { return undefined; }
+  },
   gameplayStart,
   gameplayStop,
   /** Natural break before heading back into gameplay. Poki decides whether an ad actually shows. */

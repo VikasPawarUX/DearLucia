@@ -7,7 +7,7 @@ import { EMPTY, SOLVED, shortestSolution, shuffle, slide, solutionMoves } from '
 const targetMoves = [2, 3, 3, 4, 4, 5, 6, 5, 7, 5, 7, 6, 8, 6, 8, 7, 8, 8, 8, 8, 7];
 assert.equal(levels.length, targetMoves.length);
 for (const [index, memory] of levels.entries()) {
-  test(`Memory ${memory.id} — ${memory.name} has the required shortest solution`, () => {
+  test(`Memory ${memory.id} has the required shortest solution`, () => {
     assert.equal(memory.id, index + 1);
     assert.equal(memory.minimumMoves, targetMoves[index]);
     const gap = memory.gap ?? EMPTY;
