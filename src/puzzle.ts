@@ -23,6 +23,26 @@ export function slide(board: number[], index: number): number | undefined {
   return empty;
 }
 
+export function shortestSolution(initial: readonly number[]): number {
+  return solutionMoves(initial)?.length ?? -1;
+}
+
+export function solutionMoves(initial: readonly number[]): number[] | undefined {
+  const queue = [{ board: [...initial], moves: [] as number[] }];
+  const seen = new Set([initial.join(',')]);
+  for (const { board, moves } of queue) {
+    if (solved(board)) return moves;
+    for (const index of neighbors(board.indexOf(EMPTY))) {
+      const next = [...board];
+      slide(next, index);
+      const key = next.join(',');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      queue.push({ board: next, moves: [...moves, index] });
+    }
+  }
+}
+
 function distance(board: readonly number[]): number {
   return board.reduce((sum, tile, index) => tile === EMPTY ? sum : sum
     + Math.abs(tile % 3 - index % 3)

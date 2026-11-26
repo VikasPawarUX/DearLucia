@@ -1,25 +1,178 @@
-import familyPortrait from './assets/family-portrait.jpg';
-import sailboat from './assets/sailboat.jpg';
-import lighthouse from './assets/lighthouse.jpg';
-import cottage from './assets/cottage.jpg';
-import balloon from './assets/balloon.jpg';
-import blossoms from './assets/cherry-blossoms.jpg';
-import mountains from './assets/mountain-lake.jpg';
-import windmill from './assets/windmill.jpg';
-import sunset from './assets/ocean-sunset.jpg';
-import cabin from './assets/snow-cabin.jpg';
+type Memory = {
+  id: number;
+  name: string;
+  narration: string;
+  artwork: string;
+  minimumMoves: number;
+  startingBoard?: readonly number[];
+};
 
-type Level = { name: string; artwork: string; shuffleMoves: number };
-
-export const levels: readonly Level[] = [
-  { name: 'Family portrait', artwork: familyPortrait, shuffleMoves: 2 },
-  { name: 'Sailboat on a blue ocean', artwork: sailboat, shuffleMoves: 4 },
-  { name: 'Red and white lighthouse', artwork: lighthouse, shuffleMoves: 6 },
-  { name: 'Countryside cottage', artwork: cottage, shuffleMoves: 8 },
-  { name: 'Colourful hot air balloon', artwork: balloon, shuffleMoves: 10 },
-  { name: 'Cherry blossom tree', artwork: blossoms, shuffleMoves: 12 },
-  { name: 'Snow-covered mountains and a lake', artwork: mountains, shuffleMoves: 16 },
-  { name: 'Windmill surrounded by tulips', artwork: windmill, shuffleMoves: 20 },
-  { name: 'Sunset over the ocean', artwork: sunset, shuffleMoves: 25 },
-  { name: 'Wooden cabin surrounded by snow', artwork: cabin, shuffleMoves: 30 },
+export const levels: readonly Memory[] = [
+  {
+    id: 1,
+    name: 'My Family',
+    narration: 'That’s me, Lucia. And those are my parents. Every painting holds a memory, and these are mine.',
+    artwork: new URL('./assets/family-portrait.jpg', import.meta.url).href,
+    minimumMoves: 2,
+  },
+  {
+    id: 2,
+    name: 'Our Trip to Paris',
+    narration: 'Paris, 1978. I was seven when my parents took me on my very first holiday. I’ll never forget seeing the Eiffel Tower.',
+    artwork: new URL('./assets/memory-02-paris.jpg', import.meta.url).href,
+    minimumMoves: 3,
+    startingBoard: [0, 1, 2, 8, 3, 5, 6, 4, 7],
+  },
+  {
+    id: 3,
+    name: 'A Taste of Paris',
+    narration: 'Every morning, Papa would bring us freshly baked croissants. I always asked for another.',
+    artwork: new URL('./assets/memory-03-croissant.jpg', import.meta.url).href,
+    minimumMoves: 2,
+    startingBoard: [0, 1, 2, 3, 4, 5, 8, 6, 7],
+  },
+  {
+    id: 4,
+    name: 'My Red Balloon',
+    narration: 'One afternoon, Papa bought me a beautiful red balloon. I thought it was the most wonderful thing in the world.',
+    artwork: new URL('./assets/memory-04-red-balloon.jpg', import.meta.url).href,
+    minimumMoves: 4,
+    startingBoard: [0, 4, 1, 3, 8, 2, 6, 7, 5],
+  },
+  {
+    id: 5,
+    name: 'Up, Up and Away',
+    narration: 'But a sudden gust of wind carried it away. I cried as I watched it disappear into the sky.',
+    artwork: new URL('./assets/memory-05-floating-balloon.jpg', import.meta.url).href,
+    minimumMoves: 3,
+    startingBoard: [0, 1, 2, 3, 7, 4, 6, 8, 5],
+  },
+  {
+    id: 6,
+    name: 'A Sweet Treat',
+    narration: 'Mama bought me a strawberry ice cream to cheer me up. It worked, of course.',
+    artwork: new URL('./assets/memory-06-ice-cream.jpg', import.meta.url).href,
+    minimumMoves: 5,
+    startingBoard: [0, 1, 2, 3, 5, 7, 6, 8, 4],
+  },
+  {
+    id: 7,
+    name: 'A Day at Sea',
+    narration: 'During our holiday, we took a little trip to the coast. I loved watching the sailboats drift across the water.',
+    artwork: new URL('./assets/memory-07-sailboat.jpg', import.meta.url).href,
+    minimumMoves: 6,
+    startingBoard: [0, 1, 2, 6, 3, 5, 4, 7, 8],
+  },
+  {
+    id: 8,
+    name: 'The Lighthouse',
+    narration: 'Papa pointed towards a tall lighthouse. He told me that its light helped sailors find their way home.',
+    artwork: new URL('./assets/memory-08-lighthouse.jpg', import.meta.url).href,
+    minimumMoves: 5,
+    startingBoard: [0, 2, 4, 3, 1, 8, 6, 7, 5],
+  },
+  {
+    id: 9,
+    name: 'The Journey Home',
+    narration: 'On the train home, I fell asleep beside Mama, already dreaming about our next adventure.',
+    artwork: new URL('./assets/memory-09-train.jpg', import.meta.url).href,
+    minimumMoves: 7,
+    startingBoard: [1, 4, 2, 0, 5, 8, 3, 6, 7],
+  },
+  {
+    id: 10,
+    name: 'My Eighth Birthday',
+    narration: 'The following spring, I turned eight. Mama baked my favourite chocolate cake.',
+    artwork: new URL('./assets/memory-10-birthday-cake.jpg', import.meta.url).href,
+    minimumMoves: 5,
+    startingBoard: [0, 1, 2, 6, 3, 4, 7, 8, 5],
+  },
+  {
+    id: 11,
+    name: 'A Friend Named Oliver',
+    narration: 'Mama gave me a little teddy bear for my birthday. I named him Oliver, and he never left my side.',
+    artwork: new URL('./assets/memory-11-oliver.jpg', import.meta.url).href,
+    minimumMoves: 7,
+    startingBoard: [1, 2, 4, 0, 3, 8, 6, 7, 5],
+  },
+  {
+    id: 12,
+    name: 'My First Bicycle',
+    narration: 'Papa taught me how to ride my first bicycle. I fell a few times, but he was always there to catch me.',
+    artwork: new URL('./assets/memory-12-bicycle.jpg', import.meta.url).href,
+    minimumMoves: 6,
+    startingBoard: [0, 1, 2, 4, 5, 7, 3, 6, 8],
+  },
+  {
+    id: 13,
+    name: 'A Rainy Afternoon',
+    narration: 'I loved rainy afternoons. Mama and I would walk beneath our yellow umbrella, splashing through puddles.',
+    artwork: new URL('./assets/memory-13-umbrella.jpg', import.meta.url).href,
+    minimumMoves: 8,
+    startingBoard: [0, 1, 2, 6, 3, 7, 8, 5, 4],
+  },
+  {
+    id: 14,
+    name: 'Letters from Grandma',
+    narration: 'Grandma lived far away, but her letters always made her feel close. Sometimes, she would tuck a little flower inside.',
+    artwork: new URL('./assets/memory-14-grandma-letters.jpg', import.meta.url).href,
+    minimumMoves: 6,
+    startingBoard: [0, 4, 1, 6, 3, 2, 8, 7, 5],
+  },
+  {
+    id: 15,
+    name: 'Summer in the Garden',
+    narration: 'That summer, I planted a tiny seed with Papa. Every morning, I would run outside to see how much it had grown.',
+    artwork: new URL('./assets/memory-15-sunflower.jpg', import.meta.url).href,
+    minimumMoves: 9,
+    startingBoard: [3, 0, 1, 4, 2, 5, 6, 8, 7],
+  },
+  {
+    id: 16,
+    name: 'A Little Visitor',
+    narration: 'One morning, a little kitten appeared in our garden. I gave her some food, and she decided to stay.',
+    artwork: new URL('./assets/memory-16-kitten.jpg', import.meta.url).href,
+    minimumMoves: 7,
+    startingBoard: [0, 5, 1, 3, 2, 8, 6, 4, 7],
+  },
+  {
+    id: 17,
+    name: 'The First Snow',
+    narration: 'When winter arrived, Papa and I built a snowman. I gave him my favourite red scarf to keep him warm.',
+    artwork: new URL('./assets/memory-17-snowman.jpg', import.meta.url).href,
+    minimumMoves: 10,
+    startingBoard: [1, 2, 4, 0, 3, 5, 8, 6, 7],
+  },
+  {
+    id: 18,
+    name: 'Christmas Morning',
+    narration: 'Christmas mornings were magical. Our little home was filled with twinkling lights, laughter and the smell of freshly baked cookies.',
+    artwork: new URL('./assets/memory-18-christmas.jpg', import.meta.url).href,
+    minimumMoves: 8,
+    startingBoard: [8, 0, 4, 3, 2, 1, 6, 7, 5],
+  },
+  {
+    id: 19,
+    name: 'A Gift from Papa',
+    narration: 'Papa gave me my very first camera. He told me that even the smallest moments were worth remembering.',
+    artwork: new URL('./assets/memory-19-camera.jpg', import.meta.url).href,
+    minimumMoves: 10,
+    startingBoard: [3, 0, 1, 5, 4, 2, 6, 7, 8],
+  },
+  {
+    id: 20,
+    name: 'Pieces of My Childhood',
+    narration: 'Looking through our old family album, I realise that the happiest moments of my childhood were often the simplest ones.',
+    artwork: new URL('./assets/memory-20-childhood-album.jpg', import.meta.url).href,
+    minimumMoves: 10,
+    startingBoard: [0, 1, 2, 5, 6, 7, 3, 4, 8],
+  },
+  {
+    id: 21,
+    name: 'Thank You',
+    narration: 'Thank you for putting the pieces of my childhood back together. Some memories fade with time, but the feelings they leave behind stay with us forever.',
+    artwork: new URL('./assets/memory-21-thank-you.jpg', import.meta.url).href,
+    minimumMoves: 7,
+    startingBoard: [0, 2, 4, 3, 1, 5, 6, 8, 7],
+  },
 ];

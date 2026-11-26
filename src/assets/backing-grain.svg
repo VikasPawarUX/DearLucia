@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <filter id="linen" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency=".48 .72" numOctaves="2" seed="14" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 .49
+                                         0 0 0 0 .28
+                                         0 0 0 0 .12
+                                         .14 .14 .14 0 -.15"/>
+  </filter>
+  <rect width="144" height="144" filter="url(#linen)"/>
+</svg>
