@@ -394,13 +394,14 @@ body { margin: 0; overflow-x: hidden; }
     grid-template-rows: 1fr auto auto 1fr;
     grid-template-areas: ". board" "heading board" "footer board" ". board";
     column-gap: clamp(16px, 4.5cqw, 56px);
-    row-gap: clamp(10px, 4cqh, 24px);
+    /* Space between the title divider and the move counter. */
+    row-gap: clamp(16px, 6.5cqh, 40px);
     padding: var(--pad) max(clamp(16px, 4cqw, 48px), env(safe-area-inset-right))
       var(--pad) max(clamp(16px, 4cqw, 48px), env(safe-area-inset-left));
   }
   .story .frame { grid-area: board; }
   .story .memory-heading { grid-area: heading; align-self: end; gap: clamp(6px, 2cqh, 12px); }
-  .memory-footer { grid-area: footer; align-self: start; grid-template-rows: auto auto; row-gap: clamp(8px, 3cqh, 18px); }
+  .memory-footer { grid-area: footer; align-self: start; grid-template-rows: auto auto; row-gap: clamp(14px, 5.5cqh, 34px); }
   .memory-label { max-width: 100%; min-height: clamp(18px, 6cqh, 30px); }
   .memory-number { font-size: clamp(9px, 3cqh, 14px); }
   .memory-title { font-size: clamp(19px, 7.5cqh, 40px); }
