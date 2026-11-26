@@ -43,6 +43,7 @@ function showCornerButtons(visible: boolean): void {
 
 const settingsDialog = required<HTMLDialogElement>('settings-dialog');
 const settingsControls = required('settings-controls');
+const closeSettingsButton = required<HTMLButtonElement>('close-settings');
 const deleteProgressPanel = required('delete-progress-panel');
 const deleteProgressButton = required('delete-progress');
 const cancelDeleteProgress = required('cancel-delete-progress');
@@ -141,6 +142,8 @@ function refreshAudioControls(): void {
 
 function showDeleteConfirmation(show: boolean): void {
   settingsControls.hidden = show;
+  // The confirmation has its own round ✕, so the corner ✕ steps aside to avoid two crosses.
+  closeSettingsButton.hidden = show;
   deleteProgressPanel.hidden = !show;
   deleteProgressError.hidden = true;
   settingsDialog.setAttribute('aria-labelledby', show ? 'delete-progress-title' : 'settings-title');
@@ -188,7 +191,7 @@ settingsButton.addEventListener('click', async () => {
   await animateSettings(settingsDialog, true);
   settingsTransition = false;
 });
-required('close-settings').addEventListener('click', () => {
+closeSettingsButton.addEventListener('click', () => {
   if (!settingsTransition) void closeSettings();
 });
 settingsDialog.addEventListener('cancel', event => {
