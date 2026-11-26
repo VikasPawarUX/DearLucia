@@ -49,7 +49,7 @@ This writes the Poki upload to `dist-poki/`: relative asset paths and the Poki S
 | Memories 1–5, free hints, Settings, Return Home | no ad break |
 | Hint with no free hints left (🎬 badge) | `gameplayStop()` → `rewardedBreak()`; the hint is granted only if the video played |
 
-All ad rules live in [`src/ads.ts`](src/ads.ts); the restart count resets after every break request. Following Poki's requirements there is no internal ad timer or cooldown: Poki decides whether each requested break shows an ad. Audio is silenced and keyboard input ignored while an ad plays. In the Poki build, arrow keys, space and the mouse wheel do not scroll the host page.
+Poki playtest videos record the largest `<canvas>` by default; this game is drawn in HTML, so after `init()` it calls `PokiSDK.playtestCaptureHtmlForce()` to record the page itself (without it, recordings are black). All ad rules live in [`src/ads.ts`](src/ads.ts); the restart count resets after every break request. Following Poki's requirements there is no internal ad timer or cooldown: Poki decides whether each requested break shows an ad. Audio is silenced and keyboard input ignored while an ad plays. In the Poki build, arrow keys, space and the mouse wheel do not scroll the host page.
 
 ## Painting prompts
 
