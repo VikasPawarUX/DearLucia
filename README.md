@@ -11,7 +11,7 @@ pnpm build
 
 Open the URL printed by Vite. The production build is in `dist/`. Use `?level=1` to revisit the family portrait while preserving unlocked memories.
 
-The catalog in `src/levels.ts` defines each memory’s ID, title, narration, square painting, minimum solution length, and starting board. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
+The catalog in `src/levels.ts` defines each memory’s ID, title, narration, square painting, minimum solution length, missing piece (`gap`), and starting board. The missing piece is the empty space during play and is stamped back in last, so each memory ends on its focal point: Lucia’s face, the top of the Eiffel Tower, the balloon, the birthday candles, and so on. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
 
 ## Poki build
 

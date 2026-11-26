@@ -1,3 +1,5 @@
+/** Default missing tile. Each memory may name its own `gap`: the piece held back as the empty space
+ *  and stamped back in at the end. Solved is always tile i at position i, so the gap ends on its own spot. */
 export const EMPTY = 8;
 export const SOLVED = Array.from({ length: 9 }, (_, i) => i);
 
@@ -16,24 +18,24 @@ export function solved(board: readonly number[]): boolean {
   return SOLVED.every((tile, index) => tile === board[index]);
 }
 
-export function slide(board: number[], index: number): number | undefined {
-  const empty = board.indexOf(EMPTY);
+export function slide(board: number[], index: number, gap = EMPTY): number | undefined {
+  const empty = board.indexOf(gap);
   if (!neighbors(empty).includes(index)) return;
   [board[empty], board[index]] = [board[index], board[empty]];
   return empty;
 }
 
-export function shortestSolution(initial: readonly number[]): number {
-  return solutionMoves(initial)?.length ?? -1;
+export function shortestSolution(initial: readonly number[], gap = EMPTY): number {
+  return solutionMoves(initial, gap)?.length ?? -1;
 }
 
 /** Tap order for a shortest solution from any reachable board, or undefined if it can't be solved. */
-export function solutionMoves(initial: readonly number[]): number[] | undefined {
-  if (!solvable(initial)) return undefined;
+export function solutionMoves(initial: readonly number[], gap = EMPTY): number[] | undefined {
+  if (!solvable(initial, gap)) return undefined;
   // A* with the Manhattan distance: consistent, so the first solved board popped is a shortest path.
   // It visits a few thousand boards where breadth-first search could visit 181,440.
   type Node = { board: number[]; empty: number; g: number; f: number; move: number; parent?: Node };
-  const start: Node = { board: [...initial], empty: initial.indexOf(EMPTY), g: 0, f: distance(initial), move: -1 };
+  const start: Node = { board: [...initial], empty: initial.indexOf(gap), g: 0, f: distance(initial, gap), move: -1 };
   const heap = new MinHeap<Node>((a, b) => a.f - b.f || b.g - a.g);
   const cost = new Map([[start.board.join(','), 0]]);
   heap.push(start);
@@ -52,14 +54,14 @@ export function solutionMoves(initial: readonly number[]): number[] | undefined 
       const g = node.g + 1;
       if ((cost.get(key) ?? Infinity) <= g) continue;
       cost.set(key, g);
-      heap.push({ board, empty: index, g, f: g + distance(board), move: index, parent: node });
+      heap.push({ board, empty: index, g, f: g + distance(board, gap), move: index, parent: node });
     }
   }
 }
 
 /** A 3×3 board is solvable exactly when its tiles (ignoring the gap) have an even inversion count. */
-export function solvable(board: readonly number[]): boolean {
-  const tiles = board.filter(tile => tile !== EMPTY);
+export function solvable(board: readonly number[], gap = EMPTY): boolean {
+  const tiles = board.filter(tile => tile !== gap);
   let inversions = 0;
   for (let i = 0; i < tiles.length; i++) {
     for (let j = i + 1; j < tiles.length; j++) if (tiles[i] > tiles[j]) inversions++;
@@ -104,27 +106,27 @@ class MinHeap<T> {
   }
 }
 
-function distance(board: readonly number[]): number {
-  return board.reduce((sum, tile, index) => tile === EMPTY ? sum : sum
+function distance(board: readonly number[], gap = EMPTY): number {
+  return board.reduce((sum, tile, index) => tile === gap ? sum : sum
     + Math.abs(tile % 3 - index % 3)
     + Math.abs(Math.floor(tile / 3) - Math.floor(index / 3)), 0);
 }
 
-export function shuffle(moves: number, random = Math.random): number[] {
+export function shuffle(moves: number, random = Math.random, gap = EMPTY): number[] {
   if (!Number.isInteger(moves) || moves < 1) throw new RangeError('Expected positive shuffle moves.');
   let best = [...SOLVED];
   for (let attempt = 0; attempt < 128; attempt++) {
     const board = [...SOLVED];
     let previous = -1;
     for (let step = 0; step < moves; step++) {
-      const empty = board.indexOf(EMPTY);
+      const empty = board.indexOf(gap);
       const options = neighbors(empty).filter(index => index !== previous);
       const index = options[Math.floor(random() * options.length)];
-      slide(board, index);
+      slide(board, index, gap);
       previous = empty;
     }
-    if (distance(board) > distance(best)) best = board;
-    if (distance(board) >= Math.min(18, Math.ceil(moves * .6))) return board;
+    if (distance(board, gap) > distance(best, gap)) best = board;
+    if (distance(board, gap) >= Math.min(18, Math.ceil(moves * .6))) return board;
   }
   if (!solved(best)) return best;
   throw new Error('Could not generate a playable shuffle.');

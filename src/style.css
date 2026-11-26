@@ -67,7 +67,7 @@ body { margin: 0; overflow-x: hidden; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: #64300e url('./assets/reference-frame.jpg') 50.61% 44.96% / 124.53% 125.90% no-repeat;
+  background: #64300e url('./assets/reference-frame.webp') 50.61% 44.96% / 124.53% 125.90% no-repeat;
   box-shadow: 4px calc(var(--board) * .032) calc(var(--board) * .042) calc(var(--board) * -.012) #68370c65,
     0 calc(var(--board) * .006) calc(var(--board) * .019) #7d430637;
 }

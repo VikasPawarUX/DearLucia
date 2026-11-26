@@ -11,6 +11,8 @@ function position(index: number): string {
 export class PuzzleView {
   private readonly tiles: HTMLDivElement[];
   private tilePositions: number[] = [];
+  /** The tile held back as the empty space for the current memory. */
+  private gap = EMPTY;
   private readonly pulses = new Map<number, Animation>();
 
   constructor(private host: HTMLElement, private painting: HTMLElement, private shine: HTMLElement, backing: HTMLElement) {
@@ -35,8 +37,9 @@ export class PuzzleView {
     });
   }
 
-  load(artwork: string, layout: readonly number[]): Promise<void> {
+  load(artwork: string, layout: readonly number[], gap = EMPTY): Promise<void> {
     this.clearPulses();
+    this.gap = gap;
     const image = `url("${artwork}")`;
     this.host.style.setProperty('--art', image);
     for (const tile of this.tiles) tile.querySelector('canvas')?.remove();
@@ -52,7 +55,7 @@ export class PuzzleView {
     layout.forEach((tile, index) => {
       this.tilePositions[tile] = index;
       this.tiles[tile].style.transform = position(index);
-      this.tiles[tile].hidden = tile === EMPTY;
+      this.tiles[tile].hidden = tile === gap;
     });
     return artworkReady;
   }
@@ -68,7 +71,7 @@ export class PuzzleView {
   correctPlacement(index: number, layout: readonly number[]): void {
     this.pulse(index, 1.045, 0, 360);
     for (const adjacent of neighbors(index)) {
-      if (adjacent !== EMPTY && layout[adjacent] === adjacent) {
+      if (layout[adjacent] !== this.gap && layout[adjacent] === adjacent) {
         this.pulse(adjacent, 1.025, 70, 360);
       }
     }
@@ -79,7 +82,7 @@ export class PuzzleView {
   }
 
   private pulse(tile: number, peak: number, delay: number, duration: number): Animation | undefined {
-    if (tile === EMPTY || reducedMotion.matches) return;
+    if (tile === this.gap || reducedMotion.matches) return;
     this.cancelPulse(tile);
     const piece = this.tiles[tile];
     const block = piece.querySelector('.block')!;
@@ -125,8 +128,8 @@ export class PuzzleView {
   }
 
   async stamp(): Promise<void> {
-    const tile = this.tiles[EMPTY];
-    const landed = position(EMPTY);
+    const tile = this.tiles[this.gap];
+    const landed = position(this.gap);
     tile.hidden = false;
     tile.style.transform = landed;
     if (!reducedMotion.matches) {

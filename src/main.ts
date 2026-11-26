@@ -88,6 +88,8 @@ let hasRequestedLevel = Number.isInteger(requestedLevel) && requestedLevel >= 1 
 const savedProgress = restore();
 let levelIndex = hasRequestedLevel ? requestedLevel - 1 : Math.min(savedProgress, levels.length - 1);
 let layout: number[] = [];
+/** The current memory's missing piece: the empty space while playing, stamped back in at the end. */
+let gap = EMPTY;
 let initialLayout: number[] = [];
 let moves = 0;
 let initialSolution: number[] | undefined;
@@ -116,7 +118,7 @@ function updateCells(): void {
   // One hint at a time: the button stays off until both suggested moves are made or abandoned.
   updateHintButton(busy || !initialSolution?.length || hintMoves.length > 0);
   hintButton.classList.toggle('is-active', hintMoves.length > 0);
-  const empty = layout.indexOf(EMPTY);
+  const empty = layout.indexOf(gap);
   const movable = neighbors(empty);
   cells.forEach((cell, index) => {
     cell.dataset.movable = String(!busy && movable.includes(index));
@@ -252,7 +254,7 @@ hintButton.addEventListener('click', async () => {
 
 /** Guide the next two moves of a shortest path from the board as it is now, keeping all progress. */
 function giveHint(): void {
-  hintMoves = solutionMoves(layout)?.slice(0, 2) ?? [];
+  hintMoves = solutionMoves(layout, gap)?.slice(0, 2) ?? [];
   updateCells();
   showTutorial();
 }
@@ -385,7 +387,7 @@ function markHintedCell(index?: number): void {
 }
 
 function showTutorial(): void {
-  const from = hintMoves[0] ?? (levelIndex === 0 ? solutionMoves(layout)?.[0] : undefined);
+  const from = hintMoves[0] ?? (levelIndex === 0 ? solutionMoves(layout, gap)?.[0] : undefined);
   if (from === undefined) {
     hideTutorial();
     return;
@@ -425,11 +427,12 @@ function hideTutorial(immediate = false): void {
 
 async function startLevel(restart = false, restoreEnding = false): Promise<void> {
   const level = levels[levelIndex];
+  gap = level.gap ?? EMPTY;
   showCornerButtons(false);
   busy = true;
   if (!restart) {
-    initialLayout = level.startingBoard ? [...level.startingBoard] : shuffle(level.minimumMoves);
-    initialSolution = solutionMoves(initialLayout);
+    initialLayout = level.startingBoard ? [...level.startingBoard] : shuffle(level.minimumMoves, Math.random, level.gap);
+    initialSolution = solutionMoves(initialLayout, level.gap);
   }
   layout = restoreEnding ? [...SOLVED] : [...initialLayout];
   story.classList.remove('is-epilogue');
@@ -447,7 +450,7 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
   markHintedCell();
   moves = 0;
   renderMoves();
-  const artworkReady = view.load(level.artwork, layout);
+  const artworkReady = view.load(level.artwork, layout, gap);
   memoryNumber.textContent = `Memory ${level.id}`;
   memoryTitle.textContent = level.name;
   narration.textContent = level.narration;
@@ -513,7 +516,7 @@ async function showEpilogue(animate: boolean): Promise<void> {
 async function move(index: number): Promise<void> {
   if (busy) return;
   const tile = layout[index];
-  const destination = slide(layout, index);
+  const destination = slide(layout, index, gap);
   if (destination === undefined) return;
   poki.gameplayStart();
   busy = true;
@@ -533,7 +536,7 @@ async function move(index: number): Promise<void> {
     if (tile === destination) {
       view.correctPlacement(destination, layout);
       audio.play('correct');
-      if (neighbors(destination).some(index => index !== EMPTY && layout[index] === index)) {
+      if (neighbors(destination).some(index => layout[index] !== gap && layout[index] === index)) {
         audio.play('neighbors', .07);
       }
     }
@@ -609,7 +612,7 @@ controls.addEventListener('pointerup', event => {
   suppressClick = true;
   if (Math.min(Math.abs(dx), Math.abs(dy)) > Math.max(Math.abs(dx), Math.abs(dy)) * .78) return;
   const direction = Math.abs(dx) > Math.abs(dy) ? Math.sign(dx) : 3 * Math.sign(dy);
-  if (index + direction === layout.indexOf(EMPTY)) void move(index);
+  if (index + direction === layout.indexOf(gap)) void move(index);
 });
 
 controls.addEventListener('pointercancel', event => {
