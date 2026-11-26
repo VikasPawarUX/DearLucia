@@ -2,4 +2,6 @@ overrides:
   rollup: npm:@rollup/wasm-node@4.68.8
 allowBuilds:
   esbuild: true
+  # Only needed for `wrangler dev`; deploying static files works without it.
+  workerd: false
 verifyDepsBeforeRun: false

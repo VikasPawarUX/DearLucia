@@ -8,11 +8,14 @@
     "dev:poki": "vite --mode poki",
     "build": "tsc --noEmit && vite build",
     "build:poki": "tsc --noEmit && vite build --mode poki",
+    "build:site": "tsc --noEmit && vite build --base /dearlucia/ --outDir dist-site/dearlucia --emptyOutDir",
+    "deploy:site": "pnpm build:site && node scripts/deploy-site.mjs",
     "test": "node --experimental-strip-types --test src/*.test.ts"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "@types/node": "^22.0.0"
+    "wrangler": "4.165.0"
   }
 }
