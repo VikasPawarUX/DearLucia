@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { EMPTY, SOLVED, neighbors, shuffle, slide, solved } from './puzzle.ts';
+import { EMPTY, SOLVED, neighbors, shuffle, slide, solutionMoves, solved } from './puzzle.ts';
 
 test('only orthogonally adjacent tiles can move, without wrapping around rows', () => {
   const board = [...SOLVED];
@@ -35,4 +35,42 @@ test('configured shuffle lengths produce reachable, unsolved permutations', () =
       assert.equal(inversions % 2, 0);
     }
   }
+});
+
+function breadthFirstLength(initial: readonly number[]): number {
+  let frontier = [[...initial]];
+  const seen = new Set([initial.join(',')]);
+  for (let depth = 0; frontier.length; depth++) {
+    const next: number[][] = [];
+    for (const board of frontier) {
+      if (solved(board)) return depth;
+      for (const index of neighbors(board.indexOf(EMPTY))) {
+        const child = [...board];
+        slide(child, index);
+        const key = child.join(',');
+        if (!seen.has(key)) { seen.add(key); next.push(child); }
+      }
+    }
+    frontier = next;
+  }
+  return -1;
+}
+
+test('hints from any mid-puzzle board follow a shortest legal path to solved', () => {
+  let seed = 7;
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 60; i++) {
+    const board = shuffle(4 + (i % 27), random);
+    const moves = solutionMoves(board);
+    assert.ok(moves);
+    assert.equal(moves.length, breadthFirstLength(board));
+    for (const index of moves) assert.notEqual(slide(board, index), undefined);
+    assert.equal(solved(board), true);
+  }
+});
+
+test('hardest 8-puzzle board still solves optimally, and unsolvable boards return undefined', () => {
+  assert.equal(solutionMoves([7, 5, 6, 1, 4, 3, 2, 8, 0])?.length, 31);
+  assert.deepEqual(solutionMoves(SOLVED), []);
+  assert.equal(solutionMoves([1, 0, 2, 3, 4, 5, 6, 7, 8]), undefined);
 });

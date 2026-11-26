@@ -27,19 +27,80 @@ export function shortestSolution(initial: readonly number[]): number {
   return solutionMoves(initial)?.length ?? -1;
 }
 
+/** Tap order for a shortest solution from any reachable board, or undefined if it can't be solved. */
 export function solutionMoves(initial: readonly number[]): number[] | undefined {
-  const queue = [{ board: [...initial], moves: [] as number[] }];
-  const seen = new Set([initial.join(',')]);
-  for (const { board, moves } of queue) {
-    if (solved(board)) return moves;
-    for (const index of neighbors(board.indexOf(EMPTY))) {
-      const next = [...board];
-      slide(next, index);
-      const key = next.join(',');
-      if (seen.has(key)) continue;
-      seen.add(key);
-      queue.push({ board: next, moves: [...moves, index] });
+  if (!solvable(initial)) return undefined;
+  // A* with the Manhattan distance: consistent, so the first solved board popped is a shortest path.
+  // It visits a few thousand boards where breadth-first search could visit 181,440.
+  type Node = { board: number[]; empty: number; g: number; f: number; move: number; parent?: Node };
+  const start: Node = { board: [...initial], empty: initial.indexOf(EMPTY), g: 0, f: distance(initial), move: -1 };
+  const heap = new MinHeap<Node>((a, b) => a.f - b.f || b.g - a.g);
+  const cost = new Map([[start.board.join(','), 0]]);
+  heap.push(start);
+  for (let node = heap.pop(); node; node = heap.pop()) {
+    if (node.f === node.g) {
+      const moves: number[] = [];
+      for (let step: Node | undefined = node; step?.parent; step = step.parent) moves.push(step.move);
+      return moves.reverse();
     }
+    if (node.g > cost.get(node.board.join(','))!) continue;
+    for (const index of neighbors(node.empty)) {
+      if (index === node.parent?.empty) continue;
+      const board = [...node.board];
+      [board[node.empty], board[index]] = [board[index], board[node.empty]];
+      const key = board.join(',');
+      const g = node.g + 1;
+      if ((cost.get(key) ?? Infinity) <= g) continue;
+      cost.set(key, g);
+      heap.push({ board, empty: index, g, f: g + distance(board), move: index, parent: node });
+    }
+  }
+}
+
+/** A 3×3 board is solvable exactly when its tiles (ignoring the gap) have an even inversion count. */
+export function solvable(board: readonly number[]): boolean {
+  const tiles = board.filter(tile => tile !== EMPTY);
+  let inversions = 0;
+  for (let i = 0; i < tiles.length; i++) {
+    for (let j = i + 1; j < tiles.length; j++) if (tiles[i] > tiles[j]) inversions++;
+  }
+  return inversions % 2 === 0;
+}
+
+class MinHeap<T> {
+  private readonly items: T[] = [];
+  private readonly before: (a: T, b: T) => number;
+  constructor(before: (a: T, b: T) => number) { this.before = before; }
+
+  push(item: T): void {
+    const items = this.items;
+    let i = items.push(item) - 1;
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (this.before(items[i], items[parent]) >= 0) break;
+      [items[i], items[parent]] = [items[parent], items[i]];
+      i = parent;
+    }
+  }
+
+  pop(): T | undefined {
+    const items = this.items;
+    const top = items[0];
+    const last = items.pop();
+    if (items.length && last !== undefined) {
+      items[0] = last;
+      for (let i = 0; ;) {
+        const left = 2 * i + 1;
+        const right = left + 1;
+        let smallest = i;
+        if (left < items.length && this.before(items[left], items[smallest]) < 0) smallest = left;
+        if (right < items.length && this.before(items[right], items[smallest]) < 0) smallest = right;
+        if (smallest === i) break;
+        [items[i], items[smallest]] = [items[smallest], items[i]];
+        i = smallest;
+      }
+    }
+    return top;
   }
 }
 

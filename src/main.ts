@@ -113,7 +113,9 @@ const cells = Array.from({ length: 9 }, (_, index) => {
 
 function updateCells(): void {
   settingsButton.disabled = restartButton.disabled = busy;
-  updateHintButton(busy || !initialSolution?.length);
+  // One hint at a time: the button stays off until both suggested moves are made or abandoned.
+  updateHintButton(busy || !initialSolution?.length || hintMoves.length > 0);
+  hintButton.classList.toggle('is-active', hintMoves.length > 0);
   const empty = layout.indexOf(EMPTY);
   const movable = neighbors(empty);
   cells.forEach((cell, index) => {
@@ -234,20 +236,26 @@ hintButton.addEventListener('click', async () => {
     hintsRemaining--;
     try { localStorage.setItem(hintKey, String(hintsRemaining)); }
     catch { /* The count remains available for this session. */ }
-    void startLevel(true, true);
+    audio.play('sparkle', 0, .5);
+    giveHint();
     return;
   }
   lockBoard();
   const rewarded = await poki.rewardedBreak();
-  if (!rewarded) {
-    busy = false;
-    updateCells();
-    showCornerButtons(true);
-    return;
-  }
-  audio.play('sparkle');
-  void startLevel(true, true);
+  busy = false;
+  showCornerButtons(true);
+  if (rewarded) {
+    audio.play('sparkle');
+    giveHint();
+  } else updateCells();
 });
+
+/** Guide the next two moves of a shortest path from the board as it is now, keeping all progress. */
+function giveHint(): void {
+  hintMoves = solutionMoves(layout)?.slice(0, 2) ?? [];
+  updateCells();
+  showTutorial();
+}
 returnHome.addEventListener('click', async () => {
   returnHome.setAttribute('disabled', '');
   audio.unlock();
@@ -313,7 +321,7 @@ async function startGame(): Promise<void> {
   audio.unlock();
   await Promise.all([
     fade(splash, 1, 0).then(() => { splash.hidden = true; }),
-    startLevel(false, false, !hasRequestedLevel && savedProgress === levels.length),
+    startLevel(false, !hasRequestedLevel && savedProgress === levels.length),
   ]);
 }
 
@@ -369,12 +377,22 @@ function resetTutorialMotion(): void {
 
 reducedMotion.addEventListener('change', resetTutorialMotion);
 
+let tutorialFade: Animation | undefined;
+
+/** While a hint is active, the tile to move next glows (the Memory 1 tutorial hand alone does not). */
+function markHintedCell(index?: number): void {
+  cells.forEach((cell, i) => cell.classList.toggle('is-hinted', i === index));
+}
+
 function showTutorial(): void {
   const from = hintMoves[0] ?? (levelIndex === 0 ? solutionMoves(layout)?.[0] : undefined);
   if (from === undefined) {
-    tutorial.setAttribute('hidden', '');
+    hideTutorial();
     return;
   }
+  markHintedCell(hintMoves.length ? from : undefined);
+  tutorialFade?.cancel();
+  tutorialFade = undefined;
   const x = from % 3;
   const y = Math.floor(from / 3);
   tutorial.style.left = `${(x + .5) * 100 / 3}%`;
@@ -382,10 +400,30 @@ function showTutorial(): void {
   if (tutorial.hasAttribute('hidden')) {
     tutorial.removeAttribute('hidden');
     resetTutorialMotion();
+    if (!reducedMotion.matches) {
+      tutorial.animate([{ opacity: 0, scale: .85 }, { opacity: 1, scale: 1 }], {
+        duration: 220, easing: 'cubic-bezier(.2,.7,.3,1)',
+      });
+    }
   }
 }
 
-async function startLevel(restart = false, guided = false, restoreEnding = false): Promise<void> {
+function hideTutorial(immediate = false): void {
+  markHintedCell();
+  if (tutorial.hasAttribute('hidden') || tutorialFade) return;
+  if (immediate || reducedMotion.matches) {
+    tutorial.setAttribute('hidden', '');
+    return;
+  }
+  const fade = tutorialFade = tutorial.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out' });
+  fade.finished.then(() => {
+    if (tutorialFade !== fade) return;
+    tutorialFade = undefined;
+    tutorial.setAttribute('hidden', '');
+  }).catch(() => {});
+}
+
+async function startLevel(restart = false, restoreEnding = false): Promise<void> {
   const level = levels[levelIndex];
   showCornerButtons(false);
   busy = true;
@@ -402,8 +440,11 @@ async function startLevel(restart = false, guided = false, restoreEnding = false
     element.hidden = false;
     element.style.opacity = '';
   }
-  hintMoves = guided ? initialSolution?.slice(0, 2) ?? [] : [];
+  hintMoves = [];
+  tutorialFade?.cancel();
+  tutorialFade = undefined;
   tutorial.setAttribute('hidden', '');
+  markHintedCell();
   moves = 0;
   renderMoves();
   const artworkReady = view.load(level.artwork, layout);
@@ -426,10 +467,11 @@ async function startLevel(restart = false, guided = false, restoreEnding = false
   busy = false;
   updateCells();
   showTutorial();
+  // The narration is already fading in by now, so the buttons arrive with it rather than
+  // waiting for the tile ripple and every other entrance animation to settle.
+  showCornerButtons(true);
   status.textContent = `Memory ${levels[levelIndex].id}`;
-  const enteredLayout = layout;
   await Promise.all([artworkReady, narrationFinished, tilesFinished]);
-  if (layout === enteredLayout && !solved(layout)) showCornerButtons(true);
 }
 
 function renderMoves(pulse = false): void {
@@ -470,10 +512,12 @@ async function move(index: number): Promise<void> {
   if (destination === undefined) return;
   poki.gameplayStart();
   busy = true;
+  // Following the hint advances it; any other move ends it and the player carries on alone.
   if (hintMoves[0] === index) hintMoves.shift();
   else hintMoves = [];
   const completed = solved(layout);
-  if (completed || (levelIndex !== 0 && !hintMoves.length)) tutorial.setAttribute('hidden', '');
+  // Fade the hand out while the tile slides; showTutorial() brings it back at the next hinted tile.
+  hideTutorial();
   updateCells();
   audio.play('slide');
   await view.move(tile, destination);
