@@ -41,6 +41,7 @@ export class AudioManager {
   private effects?: GainNode;
   private prefs = preferences();
   private focused = true;
+  private adPaused = false;
   private audible = false;
   private pauseTimer?: number;
   private readonly samples = new Map<string, Promise<AudioBuffer>>();
@@ -61,7 +62,13 @@ export class AudioManager {
   }
 
   private get active(): boolean {
-    return !document.hidden && this.focused;
+    return !document.hidden && this.focused && !this.adPaused;
+  }
+
+  /** Silence and suspend all audio while a Poki ad is playing. */
+  setAdPlaying(playing: boolean): void {
+    this.adPaused = playing;
+    this.syncActivity();
   }
 
   preloadOpening(): void {

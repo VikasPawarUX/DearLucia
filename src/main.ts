@@ -5,6 +5,7 @@ import { EMPTY, SOLVED, neighbors, solutionMoves, shuffle, slide, solved } from 
 import { PuzzleView, delay, reducedMotion } from './view';
 import { celebrate } from './confetti';
 import { audio } from './audio';
+import { poki } from './poki';
 
 function required<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -60,9 +61,12 @@ try {
 } catch { /* Hints remain available for this session. */ }
 
 function updateHintButton(disabled: boolean): void {
-  hintButton.disabled = disabled || hintsRemaining === 0;
-  hintCount.textContent = String(hintsRemaining);
-  hintButton.setAttribute('aria-label', `Hint (${hintsRemaining} remaining)`);
+  // Once the free hints are used, Poki builds offer one more hint per rewarded video.
+  const rewarded = hintsRemaining === 0 && poki.available;
+  hintButton.disabled = disabled || (hintsRemaining === 0 && !rewarded);
+  hintButton.classList.toggle('is-rewarded', rewarded);
+  hintCount.textContent = rewarded ? '🎬' : String(hintsRemaining);
+  hintButton.setAttribute('aria-label', rewarded ? 'Watch an ad for a hint' : `Hint (${hintsRemaining} remaining)`);
 }
 
 const progressKey = 'toy-slide-paintings-unlocked-v1';
@@ -171,6 +175,7 @@ async function closeSettings(): Promise<void> {
 settingsButton.addEventListener('click', async () => {
   audio.unlock();
   audio.play('tap');
+  poki.gameplayStop();
   refreshAudioControls();
   showDeleteConfirmation(false);
   settingsTransition = true;
@@ -208,18 +213,39 @@ required('confirm-delete-progress').addEventListener('click', async () => {
   levelIndex = 0;
   void startLevel();
 });
-restartButton.addEventListener('click', () => {
+function lockBoard(): void {
+  busy = true;
+  showCornerButtons(false);
+  updateCells();
+}
+
+restartButton.addEventListener('click', async () => {
   audio.unlock();
   audio.play('tap');
+  lockBoard();
+  await poki.commercialBreak();
   void startLevel(true);
 });
-hintButton.addEventListener('click', () => {
+hintButton.addEventListener('click', async () => {
   if (hintButton.disabled) return;
-  hintsRemaining--;
-  try { localStorage.setItem(hintKey, String(hintsRemaining)); }
-  catch { /* The count remains available for this session. */ }
   audio.unlock();
   audio.play('tap');
+  if (hintsRemaining > 0) {
+    hintsRemaining--;
+    try { localStorage.setItem(hintKey, String(hintsRemaining)); }
+    catch { /* The count remains available for this session. */ }
+    void startLevel(true, true);
+    return;
+  }
+  lockBoard();
+  const rewarded = await poki.rewardedBreak();
+  if (!rewarded) {
+    busy = false;
+    updateCells();
+    showCornerButtons(true);
+    return;
+  }
+  audio.play('sparkle');
   void startLevel(true, true);
 });
 returnHome.addEventListener('click', async () => {
@@ -227,6 +253,7 @@ returnHome.addEventListener('click', async () => {
   audio.unlock();
   audio.play('tap');
   await fade(story, 1, 0);
+  await poki.commercialBreak();
   const url = new URL(window.location.href);
   url.searchParams.set('level', '1');
   window.history.replaceState(null, '', url);
@@ -240,7 +267,7 @@ effectsVolume.addEventListener('input', () => audio.setEffectsVolume(effectsVolu
 muteAudio.addEventListener('change', () => audio.setMuted(muteAudio.checked));
 
 window.addEventListener('keydown', event => {
-  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (poki.adPlaying || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.key.toLowerCase() === 'm') {
     audio.toggleMute();
   } else if (event.code === 'BracketLeft' || event.code === 'BracketRight') {
@@ -252,6 +279,20 @@ window.addEventListener('keydown', event => {
   audio.unlock();
 });
 
+if (poki.enabled) {
+  // On Poki the game sits in an iframe on a scrolling page: keep keys and the wheel from scrolling it.
+  window.addEventListener('keydown', event => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, input, dialog')) return;
+    if (['ArrowDown', 'ArrowUp', ' '].includes(event.key)) event.preventDefault();
+  });
+  window.addEventListener('wheel', event => {
+    const target = event.target as Node | null;
+    const scrollable = storyViewport.scrollHeight > storyViewport.clientHeight;
+    if (!scrollable || !target || !storyViewport.contains(target)) event.preventDefault();
+  }, { passive: false });
+}
+
 const view = new PuzzleView(required('tiles'), required('painting'), required('shine'), required('backing'));
 void startGame();
 
@@ -260,7 +301,7 @@ async function startGame(): Promise<void> {
   const splash = required('splash');
   const title = required('splash-title');
   const artwork = required<HTMLImageElement>('splash-artwork');
-  const minimumDisplay = delay(2000);
+  const minimumDisplay = Promise.all([delay(2000), poki.ready]);
   if (reducedMotion.matches) {
     await artwork.decode().catch(() => {});
     title.classList.remove('is-painting');
@@ -268,6 +309,7 @@ async function startGame(): Promise<void> {
     await paintReveal(title, 0, 1050, artwork).catch(() => {});
   }
   await minimumDisplay;
+  poki.loadingFinished();
   audio.unlock();
   await Promise.all([
     fade(splash, 1, 0).then(() => { splash.hidden = true; }),
@@ -426,6 +468,7 @@ async function move(index: number): Promise<void> {
   const tile = layout[index];
   const destination = slide(layout, index);
   if (destination === undefined) return;
+  poki.gameplayStart();
   busy = true;
   if (hintMoves[0] === index) hintMoves.shift();
   else hintMoves = [];
@@ -452,6 +495,7 @@ async function move(index: number): Promise<void> {
     return;
   }
   view.clearPulses();
+  poki.gameplayStop();
   const nextLevel = levels[levelIndex + 1];
   if (nextLevel) showCornerButtons(false);
   const nextArtwork = nextLevel ? new Image() : undefined;
@@ -479,6 +523,7 @@ async function move(index: number): Promise<void> {
     audio.play('page');
     await fade(story, 1, 0);
     story.hidden = true;
+    await poki.commercialBreak();
     levelIndex++;
     if (hasRequestedLevel) {
       const url = new URL(window.location.href);

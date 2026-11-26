@@ -17,6 +17,7 @@
   --rim: 8.8%;
 }
 * { box-sizing: border-box; }
+html, body { overscroll-behavior: none; }
 body { margin: 0; overflow-x: hidden; }
 .splash {
   position: fixed;
@@ -439,6 +440,14 @@ body { margin: 0; overflow-x: hidden; }
   color: #fff;
   font: 600 11px / 1 system-ui, sans-serif;
   pointer-events: none;
+}
+.hint-button.is-rewarded .hint-count {
+  width: 22px;
+  top: -6px;
+  right: -6px;
+  background: #fff4e2;
+  border-color: #ba874d;
+  font-size: 12px;
 }
 .corner-button svg {
   width: 51%;

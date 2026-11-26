@@ -13,6 +13,26 @@ Open the URL printed by Vite. The production build is in `dist/`. Use `?level=1`
 
 The catalog in `src/levels.ts` defines each memory’s ID, title, narration, square painting, minimum solution length, and starting board. The family portrait retains its two-move shuffle. The other memories use fixed solvable starting boards, and a breadth-first search checks every shortest path in the test suite. All 20 memories in Chapter 1 — The Little Things share the same frame, tiles, effects, and transitions. Memory 21 is a seven-move postcard epilogue. The restored postcard and farewell stay on screen and are restored when the game opens after completion. Return Home revisits Memory 1 while retaining saved completion.
 
+## Poki build
+
+```sh
+pnpm build:poki
+```
+
+This writes the Poki upload to `dist-poki/`: relative asset paths and the Poki SDK script in `<head>`. Drag that folder (or a zip of it) into the Poki Inspector. `pnpm dev:poki` runs the same mode locally, where the SDK shows test ads. The regular `pnpm build` is unchanged and never loads the SDK.
+
+[`src/poki.ts`](src/poki.ts) wraps the SDK, ignores repeated start/stop calls, and does nothing if the SDK is blocked, so the game stays playable with an ad blocker. Events:
+
+| Moment | Events |
+| --- | --- |
+| Splash finished | `gameLoadingFinished()` |
+| First tile move in a memory | `gameplayStart()` |
+| Memory restored, settings opened | `gameplayStop()` |
+| Next memory, restart, Return Home | `gameplayStop()` → `commercialBreak()` |
+| Hint with no free hints left (🎬 badge) | `gameplayStop()` → `rewardedBreak()`; the hint is granted only if the video played |
+
+Audio is silenced and keyboard input ignored while an ad plays. In the Poki build, arrow keys, space and the mouse wheel do not scroll the host page.
+
 ## Painting prompts
 
 Memories 2–10 were generated with built-in ImageGen using the family portrait as the master style reference and the supplied memory images as composition references. The shared prompt requested full-bleed square oil paintings, matte impasto, distinct brushstrokes, warm colors and simple shapes, with recognizable clues across the nine regions and no frame, tile divisions, text, or UI.

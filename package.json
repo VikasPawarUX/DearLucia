@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:poki": "vite --mode poki",
     "build": "tsc --noEmit && vite build",
+    "build:poki": "tsc --noEmit && vite build --mode poki",
     "test": "node --experimental-strip-types --test src/*.test.ts"
   },
   "devDependencies": {
