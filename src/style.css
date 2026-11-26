@@ -234,6 +234,7 @@ body { margin: 0; overflow-x: hidden; }
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
+.move-count .is-over { color: #b3261e; }
 .memory-heading {
   display: grid;
   width: min(100%, 1200px);

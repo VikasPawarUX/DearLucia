@@ -475,7 +475,12 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
 }
 
 function renderMoves(pulse = false): void {
-  moveCount.textContent = `Moves: ${moves}/${initialSolution?.length ?? -1}`;
+  const target = initialSolution?.length ?? -1;
+  const count = document.createElement('span');
+  count.textContent = String(moves);
+  // Past the best possible solution: the count turns red so players know they've gone over.
+  count.classList.toggle('is-over', target >= 0 && moves > target);
+  moveCount.replaceChildren('Moves: ', count, `/${target}`);
   counterPulse?.cancel();
   if (pulse && !reducedMotion.matches) {
     counterPulse = moveCount.animate([
