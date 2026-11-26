@@ -60,6 +60,35 @@ try {
   if (Number.isInteger(count) && count >= 0 && count <= freeHints) hintsRemaining = count;
 } catch { /* Hints remain available for this session. */ }
 
+const perfectSeal = required('perfect-seal');
+
+// A gentle nudge: after 15 s without a tile landing in its right spot, the hint bulb jiggles once.
+// It waits while the game is busy, hidden or paused in Settings, skips Memory 1 (which has its own
+// hand), and never points at a 🎬 ad.
+const nudgeAfter = 15000;
+let lastProgressAt = performance.now();
+let nudged = false;
+function noteProgress(): void {
+  lastProgressAt = performance.now();
+  nudged = false;
+}
+window.setInterval(() => {
+  const now = performance.now();
+  const ready = !busy && !document.hidden && !settingsDialog.open && levelIndex !== 0
+    && hintButton.classList.contains('is-visible') && !hintButton.disabled && hintsRemaining > 0;
+  if (!ready) {
+    lastProgressAt = Math.max(lastProgressAt, now - nudgeAfter + 3000);
+    return;
+  }
+  if (nudged || now - lastProgressAt < nudgeAfter) return;
+  nudged = true;
+  if (reducedMotion.matches) return;
+  hintButton.animate([
+    { rotate: '0deg' }, { rotate: '-14deg', offset: .15 }, { rotate: '12deg', offset: .32 },
+    { rotate: '-8deg', offset: .5 }, { rotate: '5deg', offset: .68 }, { rotate: '0deg' },
+  ], { duration: 750, easing: 'ease-in-out' });
+}, 1000);
+
 function updateHintButton(disabled: boolean): void {
   // Once the free hints are used, Poki builds offer one more hint per rewarded video.
   const rewarded = hintsRemaining === 0 && poki.available;
@@ -96,8 +125,29 @@ let initialSolution: number[] | undefined;
 let hintMoves: number[] = [];
 let counterPulse: Animation | undefined;
 let busy = false;
-let pointer: { id: number; index: number; x: number; y: number } | undefined;
+type Drag = { id: number; index: number; x: number; y: number; at: number; toward?: number; progress: number; dragging: boolean };
+let pointer: Drag | undefined;
 let suppressClick = false;
+
+/** A short buzz on phones that support it (Android); everywhere else this quietly does nothing.
+ *  Browsers refuse vibration before the player's first real tap, and always inside another site's
+ *  frame (as on Poki), logging an error each time, so it is skipped in both cases. */
+const canBuzz = 'vibrate' in navigator && window.self === window.top;
+function buzz(pattern: number | number[]): void {
+  if (!canBuzz || !navigator.userActivation?.hasBeenActive) return;
+  try { navigator.vibrate(pattern); } catch { /* Vibration is optional. */ }
+}
+
+function canMove(index: number): boolean {
+  return neighbors(layout.indexOf(gap)).includes(index);
+}
+
+/** A tile that isn't next to the gap wiggles with a soft tap, so players learn the rule without text. */
+function refuse(index: number): void {
+  if (busy || layout[index] === gap) return;
+  view.refuse(layout[index]);
+  audio.play('tap', 0, .35);
+}
 
 const cells = Array.from({ length: 9 }, (_, index) => {
   const button = document.createElement('button');
@@ -106,7 +156,12 @@ const cells = Array.from({ length: 9 }, (_, index) => {
   button.addEventListener('click', event => {
     if (event.detail && suppressClick) return;
     audio.unlock();
-    if (!busy) audio.play('tap');
+    if (busy) return;
+    if (!canMove(index)) {
+      refuse(index);
+      return;
+    }
+    audio.play('tap');
     void move(index);
   });
   controls.append(button);
@@ -260,6 +315,7 @@ hintButton.addEventListener('click', async () => {
 
 /** Guide the next two moves of a shortest path from the board as it is now, keeping all progress. */
 function giveHint(): void {
+  noteProgress();
   hintMoves = solutionMoves(layout, gap)?.slice(0, 2) ?? [];
   updateCells();
   showTutorial();
@@ -471,7 +527,8 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
   moves = 0;
   renderMoves();
   const artworkReady = view.load(level.artwork, layout, gap);
-  memoryNumber.textContent = `Memory ${level.id}`;
+  memoryNumber.textContent = `Memory ${level.id} of ${levels.length}`;
+  perfectSeal.hidden = true;
   memoryTitle.textContent = level.name;
   narration.textContent = level.narration;
   updateCells();
@@ -493,7 +550,8 @@ async function startLevel(restart = false, restoreEnding = false): Promise<void>
   // The narration is already fading in by now, so the buttons arrive with it rather than
   // waiting for the tile ripple and every other entrance animation to settle.
   showCornerButtons(true);
-  status.textContent = `Memory ${levels[levelIndex].id}`;
+  status.textContent = `Memory ${levels[levelIndex].id} of ${levels.length}`;
+  noteProgress();
   await Promise.all([artworkReady, narrationFinished, tilesFinished]);
 }
 
@@ -512,6 +570,18 @@ function renderMoves(pulse = false): void {
       { scale: 1 },
     ], { duration: 300, easing: 'ease-in-out' });
   }
+}
+
+async function stampPerfectSeal(): Promise<void> {
+  perfectSeal.hidden = false;
+  audio.play('stamp', .05, .8);
+  audio.play('sparkle', .22, .5);
+  if (reducedMotion.matches) return;
+  await perfectSeal.animate([
+    { opacity: 0, scale: 1.9, rotate: '4deg', easing: 'cubic-bezier(.5,0,.75,0)' },
+    { opacity: 1, scale: .92, rotate: '14deg', offset: .62, easing: 'cubic-bezier(.2,.8,.3,1)' },
+    { opacity: 1, scale: 1, rotate: '12deg' },
+  ], { duration: 460 }).finished.catch(() => {});
 }
 
 async function showEpilogue(animate: boolean): Promise<void> {
@@ -533,7 +603,7 @@ async function showEpilogue(animate: boolean): Promise<void> {
   returnHome.classList.add('is-visible');
 }
 
-async function move(index: number): Promise<void> {
+async function move(index: number, dragged = 0): Promise<void> {
   if (busy) return;
   const tile = layout[index];
   const destination = slide(layout, index, gap);
@@ -548,7 +618,7 @@ async function move(index: number): Promise<void> {
   hideTutorial();
   updateCells();
   audio.play('slide');
-  await view.move(tile, destination);
+  await view.move(tile, destination, dragged);
   moves++;
   renderMoves(true);
   audio.play('settle');
@@ -556,6 +626,8 @@ async function move(index: number): Promise<void> {
     if (tile === destination) {
       view.correctPlacement(destination, layout);
       audio.play('correct');
+      buzz(12);
+      noteProgress();
       if (neighbors(destination).some(index => layout[index] !== gap && layout[index] === index)) {
         audio.play('neighbors', .07);
       }
@@ -568,6 +640,8 @@ async function move(index: number): Promise<void> {
   }
   view.clearPulses();
   poki.gameplayStop();
+  // Solved in the fewest possible moves: a gold seal is stamped onto the frame.
+  const perfect = moves === initialSolution?.length;
   const nextLevel = levels[levelIndex + 1];
   if (nextLevel) showCornerButtons(false);
   const nextArtwork = nextLevel ? new Image() : undefined;
@@ -577,9 +651,11 @@ async function move(index: number): Promise<void> {
   await view.stamp();
   audio.play('stamp');
   if (nextLevel) audio.play('sparkle');
+  buzz(perfect ? [20, 70, 20, 70, 45] : [25, 60, 35]);
   const confetti = celebrate(particles);
   await view.celebrate();
-  status.textContent = `${levels[levelIndex].name} restored`;
+  if (perfect) void stampPerfectSeal();
+  status.textContent = `${levels[levelIndex].name} restored${perfect ? ' — perfect!' : ''}`;
   audio.play('painting', 0, nextLevel ? 1 : .55);
   await view.reveal();
   const frameCelebration = reducedMotion.matches ? undefined : board.animate([
@@ -613,28 +689,54 @@ async function move(index: number): Promise<void> {
   }
 }
 
+// Dragging: a tile next to the gap follows the finger along its one free direction. Releasing past
+// a third of the way, or a quick flick, completes the slide; anything less slides it back.
 controls.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0) return;
   suppressClick = false;
   const index = cells.indexOf(event.target as HTMLButtonElement);
   if (index < 0 || busy) return;
-  pointer = { id: event.pointerId, index, x: event.clientX, y: event.clientY };
+  const toward = canMove(index) ? layout.indexOf(gap) : undefined;
+  pointer = { id: event.pointerId, index, x: event.clientX, y: event.clientY, at: event.timeStamp, toward, progress: 0, dragging: false };
   cells[index].setPointerCapture(event.pointerId);
+});
+
+controls.addEventListener('pointermove', event => {
+  if (!pointer || pointer.id !== event.pointerId || busy) return;
+  const dx = event.clientX - pointer.x;
+  const dy = event.clientY - pointer.y;
+  if (!pointer.dragging && Math.hypot(dx, dy) < 12) return;
+  pointer.dragging = true;
+  if (pointer.toward === undefined) return;
+  const cell = controls.clientWidth / 3;
+  const stepX = pointer.toward % 3 - pointer.index % 3;
+  const stepY = Math.floor(pointer.toward / 3) - Math.floor(pointer.index / 3);
+  pointer.progress = Math.max(0, Math.min(1, (dx * stepX + dy * stepY) / cell));
+  view.drag(layout[pointer.index], pointer.toward, pointer.progress);
 });
 
 controls.addEventListener('pointerup', event => {
   if (!pointer || pointer.id !== event.pointerId) return;
-  const { index, x, y } = pointer;
+  const { index, toward, progress, dragging, at } = pointer;
   pointer = undefined;
-  const dx = event.clientX - x;
-  const dy = event.clientY - y;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return;
+  if (!dragging) return; // A tap: the click handler takes it.
   suppressClick = true;
-  if (Math.min(Math.abs(dx), Math.abs(dy)) > Math.max(Math.abs(dx), Math.abs(dy)) * .78) return;
-  const direction = Math.abs(dx) > Math.abs(dy) ? Math.sign(dx) : 3 * Math.sign(dy);
-  if (index + direction === layout.indexOf(gap)) void move(index);
+  if (toward === undefined) {
+    refuse(index);
+    return;
+  }
+  if (busy) {
+    void view.snapBack(layout[index], toward, progress);
+    return;
+  }
+  const flick = progress > .1 && event.timeStamp - at < 250;
+  if (progress >= .33 || flick) void move(index, progress);
+  else void view.snapBack(layout[index], toward, progress);
 });
 
 controls.addEventListener('pointercancel', event => {
-  if (pointer?.id === event.pointerId) pointer = undefined;
+  if (pointer?.id !== event.pointerId) return;
+  const { index, toward, progress } = pointer;
+  pointer = undefined;
+  if (toward !== undefined) void view.snapBack(layout[index], toward, progress);
 });

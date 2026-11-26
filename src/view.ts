@@ -8,6 +8,13 @@ function position(index: number): string {
   return `translate(${(index % 3) * 100}%, ${Math.floor(index / 3) * 100}%)`;
 }
 
+/** A tile part-way from its slot toward the gap: `progress` 0 is home, 1 is the gap. */
+function between(index: number, toward: number, progress: number): string {
+  const x = index % 3 + (toward % 3 - index % 3) * progress;
+  const y = Math.floor(index / 3) + (Math.floor(toward / 3) - Math.floor(index / 3)) * progress;
+  return `translate(${x * 100}%, ${y * 100}%)`;
+}
+
 export class PuzzleView {
   private readonly tiles: HTMLDivElement[];
   private tilePositions: number[] = [];
@@ -107,24 +114,52 @@ export class PuzzleView {
     this.tiles[tile].classList.remove('is-pulsing');
   }
 
-  async move(tile: number, index: number): Promise<void> {
+  /** Slide a tile into the gap. `dragged` (0–1) continues from where the player's finger left it. */
+  async move(tile: number, index: number, dragged = 0): Promise<void> {
     this.cancelPulse(tile);
     const piece = this.tiles[tile];
-    const from = position(this.tilePositions[tile]);
+    const from = between(this.tilePositions[tile], index, dragged);
     const to = position(index);
     this.tilePositions[tile] = index;
     piece.style.transform = to;
     if (!reducedMotion.matches) {
-      const block = piece.querySelector('.block')!;
-      block.animate([
-        { transform: 'scale(1)', filter: 'brightness(1)' },
-        { transform: 'scale(.95)', filter: 'brightness(.93)', offset: .28 },
-        { transform: 'scale(1)', filter: 'brightness(1)' },
-      ], { duration: 280, easing: 'ease-in-out' });
+      const duration = Math.max(110, 280 * (1 - dragged));
+      if (!dragged) {
+        piece.querySelector('.block')!.animate([
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+          { transform: 'scale(.95)', filter: 'brightness(.93)', offset: .28 },
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+        ], { duration: 280, easing: 'ease-in-out' });
+      }
       await piece.animate([{ transform: from }, { transform: to }], {
-        duration: 280, easing: 'cubic-bezier(.3,.65,.3,1)',
+        duration, easing: 'cubic-bezier(.3,.65,.3,1)',
       }).finished;
     }
+  }
+
+  /** Hold a tile part-way toward the gap while the player drags it. */
+  drag(tile: number, toward: number, progress: number): void {
+    this.cancelPulse(tile);
+    this.tiles[tile].style.transform = between(this.tilePositions[tile], toward, progress);
+  }
+
+  /** Return a dragged tile to its slot when the drag was too short to count. */
+  async snapBack(tile: number, toward: number, progress: number): Promise<void> {
+    const piece = this.tiles[tile];
+    const home = position(this.tilePositions[tile]);
+    piece.style.transform = home;
+    if (reducedMotion.matches || !progress) return;
+    await piece.animate([{ transform: between(this.tilePositions[tile], toward, progress) }, { transform: home }], {
+      duration: 90 + 160 * progress, easing: 'cubic-bezier(.3,.65,.3,1)',
+    }).finished.catch(() => {});
+  }
+
+  /** A small sideways wiggle for a tile that can't move: it isn't next to the gap. */
+  refuse(tile: number): void {
+    if (reducedMotion.matches || tile === this.gap) return;
+    this.tiles[tile].querySelector('.block')!.animate([
+      { translate: '0' }, { translate: '-4.5% 0' }, { translate: '4% 0' }, { translate: '-2.5% 0' }, { translate: '0' },
+    ], { duration: 320, easing: 'ease-in-out' });
   }
 
   async stamp(): Promise<void> {
