@@ -173,7 +173,7 @@ export class PuzzleView {
         { transform: `${landed} scale(0)`, easing: 'cubic-bezier(.2,.8,.25,1)' },
         { transform: `${landed} scale(1.075)`, offset: .66, easing: 'cubic-bezier(.25,.7,.25,1)' },
         { transform: `${landed} scale(1)` },
-      ], { duration: 490 }).finished;
+      ], { duration: 450 }).finished;
       tile.style.zIndex = '';
     }
   }
@@ -187,14 +187,14 @@ export class PuzzleView {
         { transform: resting, easing: 'cubic-bezier(.2,.72,.4,1)' },
         { transform: `${resting} scale(1.028)`, offset: .48, easing: 'ease-in-out' },
         { transform: resting },
-      ], { duration: 410, delay: diagonal * 68 }).finished;
+      ], { duration: 390, delay: diagonal * 62 }).finished;
     });
     const glint = this.shine.animate([
       { opacity: 0, backgroundPosition: '100% 100%' },
       { opacity: .68, backgroundPosition: '80% 80%', offset: .2 },
       { opacity: .68, backgroundPosition: '20% 20%', offset: .8 },
       { opacity: 0, backgroundPosition: '0% 0%' },
-    ], { duration: 630, delay: 175, easing: 'ease-in-out' }).finished;
+    ], { duration: 580, delay: 160, easing: 'ease-in-out' }).finished;
     await Promise.all([...wave, glint]);
   }
 
@@ -202,7 +202,7 @@ export class PuzzleView {
     this.painting.style.opacity = '1';
     if (animate && !reducedMotion.matches) {
       await this.painting.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 460, easing: 'ease-in-out',
+        duration: 430, easing: 'ease-in-out',
       }).finished;
     }
     this.host.style.opacity = '0';

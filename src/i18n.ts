@@ -15,6 +15,10 @@ export const languages = [
   { code: 'tr', name: 'Türkçe' },
   { code: 'pl', name: 'Polski' },
   { code: 'nl', name: 'Nederlands' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'th', name: 'ไทย' },
+  { code: 'ar', name: 'العربية' },
 ] as const;
 export type Language = typeof languages[number]['code'];
 
@@ -28,7 +32,33 @@ const loaders: Record<Language, () => Promise<{ default: Translation }>> = {
   tr: () => import('./locales/tr.ts'),
   pl: () => import('./locales/pl.ts'),
   nl: () => import('./locales/nl.ts'),
+  vi: () => import('./locales/vi.ts'),
+  ru: () => import('./locales/ru.ts'),
+  th: () => import('./locales/th.ts'),
+  ar: () => import('./locales/ar.ts'),
 };
+
+/**
+ * The extra font faces a language needs (see the font roles in style.css), with a sample of its
+ * script. They are fetched before the language is shown, so no text flashes in a fallback font.
+ * The original nine languages use the fonts the game already loads.
+ */
+const languageFonts: Partial<Record<Language, string[]>> = {
+  vi: ['600 1em "Cormorant Garamond"|Kỷ niệm'],
+  ru: ['600 1em "Cormorant Garamond"|Воспоминание'],
+  th: ['400 1em "Noto Serif Thai"|ความทรงจำ', '600 1em "Noto Serif Thai"|ความทรงจำ', '700 1em "Noto Serif Thai"|ความทรงจำ'],
+  ar: ['700 1em "Aref Ruqaa"|ذكرى', '400 1em Amiri|ذكرى', '700 1em Amiri|ذكرى'],
+};
+
+async function loadFonts(code: Language): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return;
+  const faces = (languageFonts[code] ?? []).map(entry => {
+    const [font, sample] = entry.split('|');
+    return document.fonts.load(font, sample).catch(() => []);
+  });
+  // A slow or failed font download never blocks the switch for more than a moment.
+  await Promise.race([Promise.all(faces), new Promise(resolve => setTimeout(resolve, 2500))]);
+}
 
 const storageKey = 'dear-lucia-language-v1';
 let strings: Translation = en;
@@ -70,7 +100,8 @@ export function currentLanguage(): Language { return current; }
 /** Load and switch to a language. With `remember`, the choice is saved for next time. */
 export async function setLanguage(code: Language, remember = false): Promise<void> {
   try {
-    strings = (await loaders[code]()).default;
+    const [loaded] = await Promise.all([loaders[code](), loadFonts(code)]);
+    strings = loaded.default;
     current = code;
   } catch {
     strings = en; // A language file that fails to load falls back to English.

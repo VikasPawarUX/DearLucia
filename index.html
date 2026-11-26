@@ -163,13 +163,18 @@
               <path class="sound-off-slash" d="m15 9.5 5 5m0-5-5 5"/>
             </svg>
           </button>
-          <button id="language-button" class="round-button flag-button" type="button" aria-haspopup="true" aria-label="Language" title="Language"></button>
           <button id="delete-progress" class="round-button danger-button" type="button" aria-label="Delete progress" title="Delete progress" data-i18n-aria="settings.deleteProgress" data-i18n-title="settings.deleteProgress">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12M10 11v6m4-6v6"/>
             </svg>
           </button>
         </div>
+        <!-- The current language: its flag and its own name. Opens the grid of flags. -->
+        <button id="language-button" class="language-select" type="button" aria-haspopup="true" aria-label="Language" title="Language">
+          <span class="language-flag" aria-hidden="true"></span>
+          <span class="language-name" dir="auto"></span>
+          <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 5 6-5"/></svg>
+        </button>
         <p class="settings-credit"><span class="credit-love"><span data-i18n="credit.before">Made with love</span>&nbsp;<svg class="credit-heart" viewBox="4.5 6.17 15 14.33" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg></span> <span data-i18n="credit.after">by a father</span></p>
       </div>
       <div id="language-panel" class="settings-panel" hidden>

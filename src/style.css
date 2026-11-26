@@ -15,6 +15,63 @@
   --ornament: #C68A36;
   --narration-ink: #783B20;
   --rim: 8.8%;
+
+  /* Typography: three roles, each a family, weight and style. Every text style below uses these,
+     and the language rules underneath swap them, so a language change restyles the whole game. */
+  --font-label: Cinzel, Georgia, serif;         /* "Memory 9 of 21" */
+  --label-weight: 600;
+  --label-spacing: .22em;
+  --label-case: uppercase;
+  --font-title: 'Playfair Display', Georgia, serif;  /* memory titles, headings */
+  --title-weight: 700;
+  --font-body: Lora, Georgia, serif;            /* stories, move counter, dialogs */
+  --body-weight: 500;
+  --body-style: italic;
+}
+/* Vietnamese and Russian: Cinzel has no Vietnamese or Cyrillic letters, so the label uses
+   Cormorant Garamond; Playfair Display and Lora cover both scripts and stay. */
+:root:is([lang="vi"], [lang="ru"]) {
+  --font-label: 'Cormorant Garamond', Georgia, serif;
+  --body-leading: 1.5;
+}
+/* Vietnamese letters can carry two marks; a little more room keeps them clear of the line above. */
+:root[lang="vi"] { --title-leading: 1.22; }
+:root[lang="th"] {
+  --font-label: 'Noto Serif Thai', Georgia, serif;
+  --label-weight: 700;
+  --font-title: 'Noto Serif Thai', Georgia, serif;
+  --title-weight: 600;
+  --font-body: 'Noto Serif Thai', Georgia, serif;
+  --body-weight: 400;
+  --body-style: normal;
+  --label-leading: 1.4;
+  --title-leading: 1.4;
+  --body-leading: 1.7;
+}
+:root[lang="ar"] {
+  --font-label: 'Aref Ruqaa', 'Amiri', serif;
+  --label-weight: 700;
+  --font-title: Amiri, serif;
+  --title-weight: 700;
+  --font-body: Amiri, serif;
+  --body-weight: 400;
+  --body-style: normal;
+  --title-leading: 1.45;
+  --body-leading: 1.8;
+}
+/* Thai and Arabic: no letter spacing (it breaks Arabic joining and Thai clusters) and no capitals. */
+:root:is([lang="th"], [lang="ar"]) {
+  --label-spacing: 0;
+  --label-case: none;
+}
+/* Aref Ruqaa's letters are small for their size, so the Arabic label is drawn a little larger. */
+:root[lang="ar"] .memory-number { zoom: 1.25; }
+/* Never fake a bold or italic the new fonts don't have. */
+:root:is([lang="vi"], [lang="ru"], [lang="th"], [lang="ar"]) { font-synthesis: none; }
+/* Arabic reads right to left. Only the text runs right to left: the board, the artwork and the
+   button corners keep their places, so the puzzle is the same for everyone. */
+:root[lang="ar"] :is(.memory-heading, .memory-caption, .epilogue, .settings-panel, .splash-credit) {
+  direction: rtl;
 }
 * { box-sizing: border-box; }
 html, body { overscroll-behavior: none; }
@@ -40,7 +97,7 @@ body { margin: 0; overflow-x: hidden; }
   bottom: max(clamp(16px, 6dvh, 48px), env(safe-area-inset-bottom));
   inset-inline: 12px;
   text-align: center;
-  font: 700 clamp(7.8px, 1.56dvh, 13.2px) / 1.3 'Playfair Display', Georgia, serif;
+  font: var(--title-weight) clamp(7.8px, 1.56dvh, 13.2px) / 1.3 var(--font-title);
 }
 .game {
   height: 100dvh;
@@ -181,23 +238,68 @@ body { margin: 0; overflow-x: hidden; }
 #particles { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
+/* Fonts. The browser downloads a face only when text on screen uses it, so the faces for
+   Vietnamese, Russian, Thai and Arabic cost nothing until a player picks one of those languages
+   (and the game loads them before switching, so text never flashes in a fallback font). */
 @font-face {
   font-family: Cinzel;
-  src: url('../assets/font/Cinzel-SemiBold.ttf') format('truetype');
+  src: url('../assets/font/Cinzel-SemiBold.woff2') format('woff2');
   font-weight: 600;
   font-display: swap;
 }
 @font-face {
   font-family: 'Playfair Display';
-  src: url('../assets/font/PlayfairDisplay-Bold.ttf') format('truetype');
+  src: url('../assets/font/PlayfairDisplay-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
 }
 @font-face {
   font-family: Lora;
-  src: url('../assets/font/Lora-MediumItalic.ttf') format('truetype');
+  src: url('../assets/font/Lora-MediumItalic.woff2') format('woff2');
   font-style: italic;
   font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('../assets/font/CormorantGaramond-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Serif Thai';
+  src: url('../assets/font/NotoSerifThai-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Serif Thai';
+  src: url('../assets/font/NotoSerifThai-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Serif Thai';
+  src: url('../assets/font/NotoSerifThai-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: Amiri;
+  src: url('../assets/font/Amiri-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Amiri;
+  src: url('../assets/font/Amiri-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aref Ruqaa';
+  src: url('../assets/font/ArefRuqaa-Bold.woff2') format('woff2');
+  font-weight: 700;
   font-display: swap;
 }
 [hidden] { display: none !important; }
@@ -230,7 +332,7 @@ body { margin: 0; overflow-x: hidden; }
 .move-count {
   margin: 0;
   color: #865b43;
-  font: italic 500 clamp(11px, 1.9dvh, 20px) / 1.25 Lora, Georgia, serif;
+  font: var(--body-style) var(--body-weight) clamp(11px, 1.9dvh, 20px) / 1.25 var(--font-body);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -257,11 +359,12 @@ body { margin: 0; overflow-x: hidden; }
 .memory-label svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
 .memory-number {
   color: var(--memory-ink);
-  font: 600 clamp(9.6px, min(1.952dvh, 2.4vw), 22.4px) / 1.12 Cinzel, Georgia, serif;
+  font: var(--label-weight) clamp(9.6px, min(1.952dvh, 2.4vw), 22.4px) / var(--label-leading, 1.12) var(--font-label);
   white-space: nowrap;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  text-indent: .22em;
+  font-variant-numeric: lining-nums;
+  letter-spacing: var(--label-spacing);
+  text-transform: var(--label-case);
+  text-indent: var(--label-spacing);
 }
 .title-row {
   display: grid;
@@ -275,7 +378,7 @@ body { margin: 0; overflow-x: hidden; }
   position: relative;
   margin: 0;
   color: var(--title-ink);
-  font: 700 clamp(20px, min(5.8dvh, 6.08vw), 65.6px) / 1.08 'Playfair Display', Georgia, serif;
+  font: var(--title-weight) clamp(20px, min(5.8dvh, 6.08vw), 65.6px) / var(--title-leading, 1.08) var(--font-title);
   text-align: center;
   text-wrap: balance;
   overflow-wrap: anywhere;
@@ -325,7 +428,7 @@ body { margin: 0; overflow-x: hidden; }
 .narration {
   margin: 0;
   color: var(--narration-ink);
-  font: italic 500 clamp(9.8px, 2.1dvh, 23.8px) / 1.38 Lora, Georgia, serif;
+  font: var(--body-style) var(--body-weight) clamp(9.8px, 2.1dvh, 23.8px) / var(--body-leading, 1.38) var(--font-body);
   text-align: center;
 }
 .story.is-epilogue {
@@ -347,14 +450,14 @@ body { margin: 0; overflow-x: hidden; }
 }
 .epilogue-message p {
   margin: 0;
-  font: italic 500 clamp(13px, 2.5dvh, 21px) / 1.35 Lora, Georgia, serif;
+  font: var(--body-style) var(--body-weight) clamp(13px, 2.5dvh, 21px) / var(--body-leading, 1.35) var(--font-body);
 }
 .epilogue-message p:first-child {
   color: var(--title-ink);
-  font: 700 clamp(14px, 2.9dvh, 25px) / 1.3 'Playfair Display', Georgia, serif;
+  font: var(--title-weight) clamp(14px, 2.9dvh, 25px) / var(--title-leading, 1.3) var(--font-title);
 }
 .epilogue-message .epilogue-signature {
-  font: italic 500 clamp(13px, 2.45dvh, 20px) / 1.25 Lora, Georgia, serif;
+  font: var(--body-style) var(--body-weight) clamp(13px, 2.45dvh, 20px) / var(--body-leading, 1.25) var(--font-body);
 }
 @media (prefers-reduced-motion: no-preference) {
   .is-revealing .epilogue-message p { animation: epilogue-appear 1.2s ease-out both; }
@@ -541,7 +644,7 @@ body { margin: 0; overflow-x: hidden; }
   50% { box-shadow: inset 0 1px 0 #fffbea, 0 0 0 5px #f3c35a33, 0 0 22px #f2b33d99; }
 }
 .settings-dialog {
-  /* Snug around the four round buttons; other panels wrap within the same width. */
+  /* Snug around the controls; other panels wrap within the same width. */
   width: min(86vw, 288px);
   padding: 16px 20px 14px;
   color: #783b20;
@@ -549,13 +652,13 @@ body { margin: 0; overflow-x: hidden; }
   border: 1px solid #bf925d;
   border-radius: 17px;
   box-shadow: 0 14px 46px #5c351f32;
-  font: 500 15px / 1.45 Lora, Georgia, serif;
+  font: var(--body-weight) 15px / var(--body-leading, 1.45) var(--font-body);
 }
 .settings-dialog:focus { outline: none; }
 .settings-dialog::backdrop { background: #44271455; }
 /* Room between the title, the controls and the credit line. */
 .settings-panel { display: grid; gap: 20px; }
-.settings-dialog h2 { margin: 0; text-align: center; font: 700 22px 'Playfair Display', Georgia, serif; }
+.settings-dialog h2 { margin: 0; text-align: center; font: var(--title-weight) 22px / var(--title-leading, normal) var(--font-title); }
 .settings-buttons {
   display: flex;
   justify-content: center;
@@ -627,6 +730,56 @@ body { margin: 0; overflow-x: hidden; }
 .settings-dialog p { margin: 0; text-align: center; font-size: 14px; line-height: 1.4; }
 /* Longer translations wrap into even lines instead of leaving one word alone. */
 .settings-dialog h2, .settings-dialog p { text-wrap: balance; }
+/* The language selector: a pill as wide as the three buttons above it (growing only for a long
+   name such as "Nederlands"), with the current flag,
+   the language's own name in the heading font, and a chevron. The name is shown in the language
+   it names, whose fonts are already loaded because it is the current language. */
+.language-select {
+  justify-self: center;
+  width: fit-content;
+  min-width: calc(3 * var(--corner-size) + 2 * 10px);
+  max-width: 100%;
+  height: var(--corner-size);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 7px;
+  color: #7a4d2c;
+  background: #f8e8d2;
+  border: 2px solid #ba874d6b;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 #fff8e9, 0 2px 6px #85501b19;
+  cursor: pointer;
+  transition: transform 220ms ease, background-color 220ms ease;
+}
+.language-select:hover { background: #f5dfc0; }
+.language-select:active { transform: scale(.97); box-shadow: none; }
+.language-select:focus-visible { outline: 2px solid #a36a35; outline-offset: 3px; }
+.language-flag {
+  display: grid;
+  width: calc(var(--corner-size) * .62);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #8a5a2a40;
+}
+.language-flag svg { width: 100%; height: 100%; }
+.language-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font: var(--title-weight) 17px / var(--title-leading, 1.2) var(--font-title);
+}
+.language-chevron {
+  width: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 /* Language flags: a small round flag inside the same cream button as the other icons. */
 .flag-button { overflow: hidden; }
 .round-button.flag-button svg {
@@ -639,17 +792,20 @@ body { margin: 0; overflow-x: hidden; }
   box-shadow: 0 0 0 1px #8a5a2a40;
 }
 .flag-button[aria-pressed="true"] { border-color: #d9a441; box-shadow: 0 0 0 3px #f2c66d99, 0 2px 6px #85501b19; }
+/* Thirteen flags: four to a row, with the last row centred. */
 .language-grid {
-  display: grid;
-  grid-template-columns: repeat(3, auto);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  max-width: calc(4 * var(--corner-size) + 3 * 14px);
+  margin-inline: auto;
   gap: 12px 14px;
   padding-bottom: 4px;
 }
 .settings-credit {
   padding-top: 2px;
   color: #9a6b4b;
-  font: italic 500 12.5px / 1.3 Lora, Georgia, serif;
+  font: var(--body-style) var(--body-weight) 12.5px / var(--body-leading, 1.3) var(--font-body);
 }
 /* The viewBox is cropped to the heart itself. Sitting on the baseline at 0.755em, it is exactly as
    tall as the text's l, h and b, and the word spaces either side keep the gaps equal. */

@@ -17,6 +17,11 @@ for (const { code, name } of languages.filter(language => language.code !== 'en'
   });
 }
 
+test('thirteen languages, each named in its own language', () => {
+  assert.equal(languages.length, 13);
+  assert.deepEqual(languages.slice(-4).map(language => language.name), ['Tiếng Việt', 'Русский', 'ไทย', 'العربية']);
+});
+
 test('every memory has a title and a story in English', () => {
   for (let id = 1; id <= 21; id++) {
     assert.ok(en[`memory.${id}.title` as keyof typeof en]);
@@ -31,4 +36,8 @@ test('the starting language: saved choice, then Poki, then the browser, then Eng
   assert.equal(pickLanguage(null, undefined, ['ja-JP', 'TR']), 'tr', 'first supported browser language');
   assert.equal(pickLanguage(null, 'ja', ['zh-CN']), 'en', 'unsupported everywhere falls back to English');
   assert.equal(pickLanguage('xx', 'ko', []), 'en', 'an invalid saved value is ignored');
+  assert.equal(pickLanguage(null, 'ar', []), 'ar');
+  assert.equal(pickLanguage(null, undefined, ['th-TH']), 'th');
+  assert.equal(pickLanguage(null, undefined, ['vi-VN', 'en']), 'vi');
+  assert.equal(pickLanguage(null, 'ru', ['en-US']), 'ru');
 });

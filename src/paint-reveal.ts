@@ -1,6 +1,22 @@
 const pigments = ['#6b3217', '#8b4922', '#a45227', '#b17b39', '#92602b'];
 const random = (min: number, max: number) => min + Math.random() * (max - min);
 
+/** A string split into user-perceived characters, each with its marks (Intl.Segmenter when available). */
+function graphemes(text: string, lang: string): { segment: string; index: number }[] {
+  if (typeof Intl.Segmenter === 'function') {
+    return Array.from(new Intl.Segmenter(lang || undefined, { granularity: 'grapheme' }).segment(text));
+  }
+  const parts: { segment: string; index: number }[] = [];
+  let index = 0;
+  for (const segment of text) {
+    // Without Segmenter, keep combining marks (accents, Thai vowels and tones, Arabic harakat) with their letter.
+    if (parts.length && /\p{M}/u.test(segment)) parts[parts.length - 1].segment += segment;
+    else parts.push({ segment, index });
+    index += segment.length;
+  }
+  return parts;
+}
+
 function smooth(from: number, to: number, value: number): number {
   const t = Math.max(0, Math.min(1, (value - from) / (to - from)));
   return t * t * (3 - 2 * t);
@@ -39,8 +55,11 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
 
     const mask = document.createElement('canvas');
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.ceil(box.width + 8);
-    const height = Math.ceil(box.height + 8);
+    // Room around the text for marks that reach past the line box: stacked Vietnamese accents,
+    // Thai vowels and tone marks above and below, Arabic dots and swashes.
+    const pad = artwork ? 4 : Math.max(4, Math.ceil(parseFloat(style.fontSize) * .35));
+    const width = Math.ceil(box.width + pad * 2);
+    const height = Math.ceil(box.height + pad * 2);
     mask.width = canvas.width = Math.ceil(width * ratio);
     mask.height = canvas.height = Math.ceil(height * ratio);
     const glyphs = mask.getContext('2d', { willReadFrequently: true });
@@ -50,7 +69,7 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
     glyphs.scale(ratio, ratio);
     const capHeight = artwork ? box.height * .48 : parseFloat(style.fontSize);
     if (artwork) {
-      glyphs.drawImage(picture ?? artwork, 4, 4, box.width, box.height);
+      glyphs.drawImage(picture ?? artwork, pad, pad, box.width, box.height);
     } else if (text instanceof Text) {
       glyphs.font = font;
       const metrics = glyphs.measureText(text.data);
@@ -58,21 +77,34 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
       const ascent = metrics.fontBoundingBoxAscent ?? capHeight * .85;
       const descent = metrics.fontBoundingBoxDescent ?? capHeight * .25;
       const baseline = (lineHeight + ascent - descent) / 2;
+      // Find where the browser wrapped the title, then draw each line whole, so the canvas shapes
+      // it exactly as the page does: Arabic letters stay joined, Thai clusters and Vietnamese
+      // accents stay together. Text is measured by grapheme (a letter with all its marks), never
+      // split inside one.
+      const rtl = style.direction === 'rtl';
+      glyphs.direction = rtl ? 'rtl' : 'ltr';
+      glyphs.textAlign = rtl ? 'right' : 'left';
       const range = document.createRange();
-      const lines = new Map<number, { content: string; left: number }>();
-      let offset = 0;
-      for (const character of text.data) {
-        range.setStart(text, offset);
-        offset += character.length;
-        range.setEnd(text, offset);
+      const lines = new Map<number, { content: string; left: number; right: number }>();
+      for (const { segment, index } of graphemes(text.data, title.lang || document.documentElement.lang)) {
+        range.setStart(text, index);
+        range.setEnd(text, index + segment.length);
         const rect = range.getBoundingClientRect();
         const line = Math.round((rect.top - box.top) / lineHeight);
         const previous = lines.get(line);
-        if (previous) previous.content += character;
-        else lines.set(line, { content: character, left: rect.left - box.left });
+        const left = rect.left - box.left;
+        const right = rect.right - box.left;
+        if (!previous) lines.set(line, { content: segment, left, right });
+        else {
+          previous.content += segment;
+          if (rect.width) {
+            previous.left = Math.min(previous.left, left);
+            previous.right = Math.max(previous.right, right);
+          }
+        }
       }
-      for (const [line, { content, left }] of lines) {
-        glyphs.fillText(content.trimEnd(), left + 4, 4 + line * lineHeight + baseline);
+      for (const [line, { content, left, right }] of lines) {
+        glyphs.fillText(content.trim(), (rtl ? right : left) + pad, pad + line * lineHeight + baseline);
       }
 
     }
@@ -114,6 +146,7 @@ export async function paintReveal(title: HTMLElement, delay: number, duration: n
 
     canvas.className = 'title-pigment';
     canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.top = canvas.style.left = `${-pad}px`;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     title.append(canvas);

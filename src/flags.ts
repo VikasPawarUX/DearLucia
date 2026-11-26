@@ -1,6 +1,8 @@
 // Small built-in flag drawings for the language picker (no external images). Each is a square
 // SVG that the round button crops to a circle. Flags mark languages, so Portuguese shows Brazil to
 // match its Brazilian translation, and English shows the UK to match its British spelling.
+// Arabic is spoken across many countries; it shows the flag of the United Arab Emirates, a simple
+// and widely recognised Arabic-speaking flag that reads clearly at icon size.
 import type { Language } from './i18n.ts';
 
 const stripes = (direction: 'row' | 'column', colors: string[]) => colors.map((color, i) => {
@@ -36,6 +38,13 @@ const art: Record<Language, string> = {
     <polygon points="${star(20.2, 15, 3)}" fill="#fff" transform="rotate(-18 20.2 15)"/>`,
   pl: stripes('row', ['#fff', '#DC143C']),
   nl: stripes('row', ['#AE1C28', '#fff', '#21468B']),
+  vi: `<rect width="30" height="30" fill="#DA251D"/>
+    <polygon points="${star(15, 15.6, 8.4)}" fill="#FFFF00"/>`,
+  ru: stripes('row', ['#fff', '#0039A6', '#D52B1E']),
+  // Thailand: red, white, a double-height blue band, white, red.
+  th: `<rect width="30" height="30" fill="#A51931"/>
+    <rect y="5" width="30" height="20" fill="#F4F5F8"/><rect y="10" width="30" height="10" fill="#2D2A4A"/>`,
+  ar: `${stripes('row', ['#00732F', '#fff', '#000'])}<rect width="8.5" height="30" fill="#FF0000"/>`,
 };
 
 /** An SVG of the language's flag, filling a square that a round button crops to a circle. */

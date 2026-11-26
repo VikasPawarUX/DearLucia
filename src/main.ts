@@ -368,8 +368,16 @@ async function fitTitle(): Promise<void> {
   measureContext ??= document.createElement('canvas').getContext('2d');
   if (!width || !measureContext) return;
   measureContext.font = font;
-  const longest = Math.max(...text.split(/\s+/).map(word => measureContext!.measureText(word).width));
+  measureContext.direction = style.direction === 'rtl' ? 'rtl' : 'ltr';
+  const longest = Math.max(...words(text).map(word => measureContext!.measureText(word).width));
   if (longest > width) memoryTitle.style.fontSize = `${parseFloat(style.fontSize) * width / longest * .97}px`;
+}
+/** The words of a title. Thai is written without spaces, so its words come from the browser's word breaker. */
+function words(text: string): string[] {
+  if (currentLanguage() === 'th' && typeof Intl.Segmenter === 'function') {
+    return Array.from(new Intl.Segmenter('th', { granularity: 'word' }).segment(text), part => part.segment.trim()).filter(Boolean);
+  }
+  return text.split(/\s+/);
 }
 let refitTimer: number | undefined;
 window.addEventListener('resize', () => {
@@ -411,7 +419,10 @@ languageButton.addEventListener('click', () => {
 function applyLanguage(): void {
   translatePage();
   const current = languages.find(language => language.code === currentLanguage())!;
-  languageButton.innerHTML = flag(current.code);
+  languageButton.querySelector('.language-flag')!.innerHTML = flag(current.code);
+  const languageName = languageButton.querySelector<HTMLElement>('.language-name')!;
+  languageName.textContent = current.name;
+  languageName.lang = current.code;
   languageButton.title = current.name;
   languageButton.setAttribute('aria-label', `${t('language.label')}: ${current.name}`);
   for (const button of flagButtons) button.setAttribute('aria-pressed', String(button.lang === current.code));
@@ -499,13 +510,28 @@ async function startGame(): Promise<void> {
   ]);
 }
 
-async function fade(element: HTMLElement, from: number, to: number): Promise<void> {
+async function fade(element: HTMLElement, from: number, to: number, duration = 440): Promise<void> {
   element.style.opacity = String(to);
   if (!reducedMotion.matches) {
     await element.animate([{ opacity: from }, { opacity: to }], {
-      duration: 440, easing: 'cubic-bezier(.4,0,.3,1)',
+      duration, easing: 'cubic-bezier(.4,0,.3,1)',
     }).finished;
   }
+}
+
+/** Wait `ms`, or less if the player taps, clicks or presses a key first. */
+function waitOrTap(ms: number): Promise<void> {
+  return new Promise(resolve => {
+    const stop = new AbortController();
+    const done = () => {
+      stop.abort();
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(done, ms);
+    window.addEventListener('pointerdown', done, { capture: true, signal: stop.signal });
+    window.addEventListener('keydown', done, { capture: true, signal: stop.signal });
+  });
 }
 
 async function enterMemory(): Promise<{ narrationFinished?: Promise<Animation> }> {
@@ -516,30 +542,31 @@ async function enterMemory(): Promise<{ narrationFinished?: Promise<Animation> }
       delay, duration, easing: 'cubic-bezier(.22,.65,.3,1)', fill: 'backwards',
     }).finished;
 
-  void animate(memoryLabel, 0, 300, 'translateY(6px)');
+  // The same choreography as before, about 1.6x faster, so players reach the board sooner.
+  void animate(memoryLabel, 0, 240, 'translateY(6px)');
   // Hold the later stages while the local font loads, then run them on one timeline.
   const pending = [titleDivider, board, moveCount, caption, ...Array.from(flourishes)];
   pending.forEach(element => { (element as HTMLElement | SVGElement).style.opacity = '0'; });
-  const painted = paintReveal(memoryTitle, 170, 1050);
+  const painted = paintReveal(memoryTitle, 110, 700);
   const style = getComputedStyle(memoryTitle);
   await document.fonts.load(`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`, memoryTitle.textContent ?? '').catch(() => {});
   pending.forEach(element => { (element as HTMLElement | SVGElement).style.opacity = ''; });
-  audio.play('paint', .17);
-  audio.play('ornament', 1);
-  audio.play('frame', 1.69);
+  audio.play('paint', .11);
+  audio.play('ornament', .62);
+  audio.play('frame', 1.05);
 
   const draw = (path: Element, delay: number, duration: number) => {
     path.animate([{ strokeDasharray: '1 1', strokeDashoffset: 1 }, { strokeDasharray: '1 1', strokeDashoffset: 0 }], {
       delay, duration, easing: 'cubic-bezier(.35,.12,.25,1)', fill: 'backwards',
     });
   };
-  flourishes.forEach(flourish => { void animate(flourish, 1000, 110); });
-  draw(flourishPen, 1000, 530);
-  dividerLines.forEach(line => draw(line, 1060, 490));
-  void animate(dividerDiamond, 1060, 220);
-  void animate(moveCount, 1440, 350, 'translateY(3px)');
-  const narrationFinished = animate(caption, 1580, 410, 'translateY(4px)');
-  await Promise.all([painted.catch(() => {}), animate(board, 1300, 470, 'scale(.975)')]);
+  flourishes.forEach(flourish => { void animate(flourish, 620, 110); });
+  draw(flourishPen, 620, 400);
+  dividerLines.forEach(line => draw(line, 660, 380));
+  void animate(dividerDiamond, 660, 200);
+  void animate(moveCount, 860, 300, 'translateY(3px)');
+  const narrationFinished = animate(caption, 940, 340, 'translateY(4px)');
+  await Promise.all([painted.catch(() => {}), animate(board, 760, 380, 'scale(.975)')]);
   return { narrationFinished };
 }
 
@@ -747,7 +774,7 @@ async function move(index: number, dragged = 0): Promise<void> {
   const nextArtwork = nextLevel ? new Image() : undefined;
   if (nextArtwork && nextLevel) nextArtwork.src = nextLevel.artwork;
 
-  await delay(reducedMotion.matches ? 100 : 230);
+  await delay(reducedMotion.matches ? 100 : 200);
   await view.stamp();
   audio.play('stamp');
   if (nextLevel) audio.play('sparkle');
@@ -767,9 +794,10 @@ async function move(index: number, dragged = 0): Promise<void> {
   ], { duration: 540, easing: 'ease-in-out' }).finished;
   if (nextArtwork) {
     save(levelIndex + 1);
-    await Promise.all([delay(2000), confetti, frameCelebration, nextArtwork.decode().catch(() => {})]);
+    // Time to enjoy the finished painting and the confetti. Players who are ready can tap to move on.
+    await Promise.all([waitOrTap(1800), frameCelebration, nextArtwork.decode().catch(() => {})]);
     audio.play('page');
-    await fade(story, 1, 0);
+    await fade(story, 1, 0, 380);
     story.hidden = true;
     // After the celebration and before the next memory loads (see ads.ts for when).
     await adPolicy.afterMemory(levels[levelIndex].id);
