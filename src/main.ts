@@ -6,6 +6,7 @@ import { PuzzleView, delay, reducedMotion } from './view';
 import { celebrate } from './confetti';
 import { audio } from './audio';
 import { poki } from './poki';
+import { createAdPolicy } from './ads';
 
 function required<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -61,6 +62,14 @@ try {
 } catch { /* Hints remain available for this session. */ }
 
 const perfectSeal = required('perfect-seal');
+// Poki ad breaks: every rule is in ads.ts. Memories 1–5 are ad-free; from Memory 6 a break is
+// requested after a completed memory or every third restart. Poki decides whether an ad shows.
+const adPolicy = createAdPolicy({
+  firstMemory: 6,
+  lastMemory: levels.length,
+  restartsPerBreak: 3,
+  showBreak: () => poki.commercialBreak(),
+});
 
 // A gentle nudge: after 15 s without a tile landing in its right spot, the hint bulb jiggles once.
 // It waits while the game is busy, hidden or paused in Settings, skips Memory 1 (which has its own
@@ -288,7 +297,8 @@ restartButton.addEventListener('click', async () => {
   audio.unlock();
   audio.play('tap');
   lockBoard();
-  await poki.commercialBreak();
+  // Every third restart (from Memory 6) may bring an ad, shown before the puzzle resets.
+  await adPolicy.beforeRestart(levels[levelIndex].id);
   void startLevel(true);
 });
 hintButton.addEventListener('click', async () => {
@@ -325,7 +335,6 @@ returnHome.addEventListener('click', async () => {
   audio.unlock();
   audio.play('tap');
   await fade(story, 1, 0);
-  await poki.commercialBreak();
   const url = new URL(window.location.href);
   url.searchParams.set('level', '1');
   window.history.replaceState(null, '', url);
@@ -671,7 +680,8 @@ async function move(index: number, dragged = 0): Promise<void> {
     audio.play('page');
     await fade(story, 1, 0);
     story.hidden = true;
-    await poki.commercialBreak();
+    // After the celebration and before the next memory loads (see ads.ts for when).
+    await adPolicy.afterMemory(levels[levelIndex].id);
     levelIndex++;
     if (hasRequestedLevel) {
       const url = new URL(window.location.href);

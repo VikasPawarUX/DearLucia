@@ -36,10 +36,12 @@ This writes the Poki upload to `dist-poki/`: relative asset paths and the Poki S
 | Splash finished | `gameLoadingFinished()` |
 | First tile move in a memory | `gameplayStart()` |
 | Memory restored, settings opened | `gameplayStop()` |
-| Next memory, restart, Return Home | `gameplayStop()` → `commercialBreak()` |
+| Memory 6 onwards: after a memory's celebration, before the next one loads (never after Memory 21) | `gameplayStop()` → `commercialBreak()` |
+| Memory 6 onwards: every third Restart (counted across memories), before the puzzle resets | `gameplayStop()` → `commercialBreak()` |
+| Memories 1–5, free hints, Settings, Return Home | no ad break |
 | Hint with no free hints left (🎬 badge) | `gameplayStop()` → `rewardedBreak()`; the hint is granted only if the video played |
 
-Audio is silenced and keyboard input ignored while an ad plays. In the Poki build, arrow keys, space and the mouse wheel do not scroll the host page.
+All ad rules live in [`src/ads.ts`](src/ads.ts); the restart count resets after every break request. Following Poki's requirements there is no internal ad timer or cooldown: Poki decides whether each requested break shows an ad. Audio is silenced and keyboard input ignored while an ad plays. In the Poki build, arrow keys, space and the mouse wheel do not scroll the host page.
 
 ## Painting prompts
 
