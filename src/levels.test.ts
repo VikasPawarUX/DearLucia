@@ -3,7 +3,8 @@ import test from 'node:test';
 import { levels } from './levels.ts';
 import { EMPTY, SOLVED, shortestSolution, shuffle, slide, solutionMoves } from './puzzle.ts';
 
-const targetMoves = [2, 3, 3, 4, 4, 5, 6, 5, 7, 5, 7, 6, 8, 6, 9, 7, 10, 8, 10, 10, 7];
+// No memory needs more than 8 moves, to keep the game relaxing.
+const targetMoves = [2, 3, 3, 4, 4, 5, 6, 5, 7, 5, 7, 6, 8, 6, 8, 7, 8, 8, 8, 8, 7];
 assert.equal(levels.length, targetMoves.length);
 for (const [index, memory] of levels.entries()) {
   test(`Memory ${memory.id} — ${memory.name} has the required shortest solution`, () => {
@@ -40,4 +41,8 @@ for (const [index, memory] of levels.entries()) {
 test('every memory after the first starts from a different board', () => {
   const boards = levels.filter(memory => memory.startingBoard).map(memory => memory.startingBoard!.join(','));
   assert.equal(new Set(boards).size, boards.length);
+});
+
+test('no memory needs more than 8 moves', () => {
+  for (const memory of levels) assert.ok(memory.minimumMoves <= 8, `Memory ${memory.id} needs ${memory.minimumMoves}`);
 });
